@@ -1,7 +1,10 @@
 """Data preparation for 'Agent reliability under disruption'.
 Derived from notebooks/01_first_look.ipynb (2026-09-17). Reproduces the processed tables from the raw files.
 Decisions (see notebook): nothing is deleted from YJMob; records are flagged. Windows fit 0-44 / val 45-59 / fb 60-66 / tgt 67-74.
-Weekend-like phases {0, 6}. Split 70/30 by uid, seed 20260917. Eligibility: >= 20 adjacent pairs in every window.
+Weekly phase (corrected 2026-09-17, notebooks/02_review_and_fix.ipynb): d mod 7 on days 0-59, (d + 4) mod 7 on days 60-74, because
+the weekly rhythm of the emergency block is shifted by 4 days. Phases {0, 6} are weekend-like. Days 1, 8, 29, 37, 50 and 67 sit on a
+weekday phase but run like a rest day and are flagged holiday_like. The script checks this day typing against the data and stops if
+it does not hold. Split 70/30 by uid, seed 20260917. Eligibility: >= 20 adjacent pairs in every window.
 Flags: adjacent (gap 1 slot), big_jump (> 100 cells in 30 min), flicker_mid (middle of a one-cell A-B-A). Foursquare: exact
 duplicates dropped, JST local time for all rows (tz_flag), names normalised, 500 m local grid, coarse groups from the reviewed csv.
 Usage: python prep.py [--root /projects/ancz7294/yjmob]
@@ -11,6 +14,8 @@ from pathlib import Path
 import numpy as np, pandas as pd
 
 SEED, N_PEOPLE = 20260917, 25000
+SHIFT_FROM, SHIFT = 60, 4                      # weekly phase = (d + SHIFT) mod 7 from day SHIFT_FROM on
+HOLIDAY_LIKE = [1, 8, 29, 37, 50, 67]          # weekday phase, no morning peak
 MD5 = {"yjmob100k-dataset2.csv.gz": "ec769fafa7a746caa3d48d2844b9735c", "cell_POIcat.csv.gz": "93af4bb0b417cd20e95fdc1d8f7b459f",
        "POI_datacategories.csv": "fd024e10c1d1dd91356d010413ace390", "foursquare/dataset_tsmc2014.zip": "a9534dc06f0495b36f216017d2f47701"}
 
@@ -19,6 +24,22 @@ def md5(p):
     with open(p, "rb") as f:
         for b in iter(lambda: f.read(1 << 22), b""): h.update(b)
     return h.hexdigest()
+
+def day_table(yj):
+    """One row per day: corrected weekly phase, day type and the two signals the day typing is checked against."""
+    m = yj.groupby(["d", "t"]).size().unstack(fill_value=0).to_numpy() / N_PEOPLE
+    dt = pd.DataFrame({"d": np.arange(len(m), dtype="int16")})
+    dt["phase"] = np.where(dt.d < SHIFT_FROM, dt.d % 7, (dt.d + SHIFT) % 7).astype("int8")
+    dt["weekend"] = dt.phase.isin([0, 6])
+    dt["holiday_like"] = dt.d.isin(HOLIDAY_LIKE)
+    dt["workday"] = ~dt.weekend & ~dt.holiday_like
+    dt["emergency"] = dt.d >= 60
+    dt["coverage"] = m.mean(axis=1)
+    dt["morning_ratio"] = m[:, 15:17].mean(axis=1) / m[:, 20:23].mean(axis=1)      # 07:30-08:30 against 10:00-11:30
+    # guard: workdays have a morning peak, weekend-like and holiday-like days do not
+    wrong = dt[(dt.morning_ratio > 1) != dt.workday]
+    assert wrong.empty, f"day typing does not match the data on days {wrong.d.tolist()}"
+    return dt
 
 def prep_yjmob(raw, out, log):
     yj = pd.read_csv(raw / "yjmob100k-dataset2.csv.gz", engine="pyarrow",
@@ -37,8 +58,12 @@ def prep_yjmob(raw, out, log):
     back = (x[2:] == x[:-2]) & (y[2:] == y[:-2]) & ((x[1:-1] != x[:-2]) | (y[1:-1] != y[:-2]))
     one = np.maximum(np.abs(x[1:-1] - x[:-2]), np.abs(y[1:-1] - y[:-2])) == 1
 
+    dt = day_table(yj)
+    dt.to_parquet(out / "day_table.parquet", index=False)
+    log["weekend_days"], log["holiday_like_days"] = dt.d[dt.weekend].tolist(), dt.d[dt.holiday_like].tolist()
+
     an = yj.copy()
-    an["phase"] = (an.d % 7).astype("int8"); an["weekend"] = an.phase.isin([0, 6])
+    for c in ["phase", "weekend", "holiday_like"]: an[c] = dt[c].to_numpy()[an.d.to_numpy()]
     an["window"] = pd.cut(an.d, bins=[-1, 44, 59, 66, 74], labels=["fit", "val", "fb", "tgt"]).astype("category")
     an["slot"] = (an.d.astype("int32") * 48 + an.t).astype("int32")
     prev_same = np.r_[False, same]
