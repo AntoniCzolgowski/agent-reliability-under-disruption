@@ -1,0 +1,51 @@
+---
+// Numbered figure with a thumbnail in the page and the full image in a native dialog.
+// The caption slot takes exactly two sentences: what the figure shows, then what to notice.
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+  n: number | string;
+  title: string;
+  src: ImageMetadata;
+  alt: string;
+  label?: string;
+  small?: boolean;
+  eager?: boolean;
+}
+
+const { n, title, src, alt, label = "Figure", small = false, eager = false } = Astro.props;
+const id = `fig-${String(label).toLowerCase()}-${n}`;
+---
+
+<figure class:list={[{ small }]} id={id}>
+  <button class="fig-open" type="button" data-dialog={`${id}-dialog`} aria-label={`Enlarge ${label} ${n}: ${title}`}>
+    <Image src={src} alt={alt} widths={[480, 800, 1200, src.width]} sizes={small ? "(max-width: 40rem) 100vw, 38rem" : "(max-width: 64rem) 100vw, 60rem"} loading={eager ? "eager" : "lazy"} />
+  </button>
+  <figcaption>
+    <span class="fig-no">{label} {n}</span><span class="fig-title">{title}</span>
+    <span class="fig-text"><slot /></span>
+  </figcaption>
+  <dialog class="fig-dialog" id={`${id}-dialog`} aria-label={`${label} ${n}: ${title}`}>
+    <Image src={src} alt={alt} width={src.width} loading="lazy" />
+    <form method="dialog">
+      <span>{label} {n}. {title}</span>
+      <button type="submit">Close</button>
+    </form>
+  </dialog>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".fig-open").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const dlg = document.getElementById(btn.dataset.dialog ?? "") as HTMLDialogElement | null;
+      dlg?.showModal();
+    });
+  });
+  // A click on the backdrop closes the dialog.
+  document.querySelectorAll<HTMLDialogElement>("dialog.fig-dialog").forEach((dlg) => {
+    dlg.addEventListener("click", (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+  });
+</script>

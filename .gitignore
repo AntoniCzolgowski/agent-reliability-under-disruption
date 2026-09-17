@@ -1,0 +1,16 @@
+# data never enters the repo; only site/public/data/hero.png and hero.json are committed
+data/raw/
+data/processed/
+*.csv.gz
+*.parquet
+*.zip
+
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+.DS_Store
+Thumbs.db
+__pycache__/
+.ipynb_checkpoints/

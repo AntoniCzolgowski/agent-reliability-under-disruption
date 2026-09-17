@@ -1,0 +1,157 @@
+/* Tokens. Colour meaning is fixed across the site:
+   cobalt = ordinary days, vermilion = emergency, teal = modelled or simulated. */
+:root {
+  --ground: #fcfcfa;
+  --ink: #14161a;
+  --muted: #5b616b;
+  --rule: #d9dad6;
+  --cobalt: #1f4fd8;
+  --vermilion: #e8412a;
+  --vermilion-text: #c7321d;
+  --teal: #0e9c8a;
+  --teal-text: #0b7a6c;
+
+  --serif: "Brygada 1918", Georgia, "Times New Roman", serif;
+  --sans: "Chivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Chivo Mono", ui-monospace, Consolas, monospace;
+
+  --measure: 38rem;
+  --wide: 60rem;
+  --gutter: clamp(1.1rem, 4vw, 3rem);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 2rem;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--cobalt); text-decoration-thickness: 0.06em; text-underline-offset: 0.18em; }
+a:hover { text-decoration-thickness: 0.12em; }
+
+:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 3px; }
+
+.skip {
+  position: absolute; left: var(--gutter); top: -4rem;
+  background: var(--ink); color: var(--ground);
+  font: 500 0.875rem/1 var(--sans); padding: 0.7rem 0.9rem; z-index: 10;
+}
+.skip:focus { top: 0.5rem; }
+
+/* Page frame: one text column set to the left, figures may run wider to the right. */
+.frame { max-width: 78rem; margin: 0 auto; padding: 0 var(--gutter); }
+
+main.frame { padding-top: 3.5rem; padding-bottom: 5rem; }
+main > * { max-width: var(--measure); }
+main > .wide, main > figure, main > .table-scroll { max-width: var(--wide); }
+
+h1, h2, h3 { font-family: var(--sans); font-weight: 500; line-height: 1.15; letter-spacing: -0.012em; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.1rem); margin: 0 0 1.6rem; max-width: 22ch; }
+h2 { font-size: 1.55rem; margin: 3.2rem 0 0.9rem; padding-top: 1.1rem; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.15rem; margin: 2.2rem 0 0.5rem; }
+p, ul, ol { margin: 0 0 1.15rem; }
+ol, ul { padding-left: 1.4rem; }
+li { margin-bottom: 0.55rem; }
+ol > li::marker { font-family: var(--mono); font-size: 0.85em; color: var(--muted); }
+
+.lede { font-size: 1.3rem; line-height: 1.5; }
+.note, .stub-line { font-family: var(--sans); font-size: 0.95rem; color: var(--muted); }
+
+/* Visible placeholder for copy that Antoni writes himself. */
+.todo {
+  font-family: var(--mono); font-size: 0.85rem; color: var(--vermilion-text);
+  border-left: 2px solid var(--vermilion); padding: 0.35rem 0 0.35rem 0.8rem;
+}
+
+code, kbd, .num { font-family: var(--mono); font-size: 0.88em; font-variant-numeric: tabular-nums; }
+
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; font: 0.85rem/1.4 var(--mono); font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 0.45rem 1rem 0.45rem 0; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--sans); font-weight: 500; }
+
+/* Header and navigation */
+.site-head { border-bottom: 1px solid var(--rule); }
+.site-head .frame { padding-top: 1.1rem; }
+.head-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.site-name {
+  font: 500 1.02rem/1.2 var(--sans); color: var(--ink); text-decoration: none;
+  display: inline-block; padding: 0.2rem 0;
+}
+.site-name:hover { text-decoration: underline; }
+
+.nav { font: 400 0.875rem/1.2 var(--sans); }
+.nav-lists { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0 2.5rem; padding-top: 0.55rem; }
+.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 1.35rem; }
+.nav li { margin: 0; }
+.nav a {
+  display: block; padding: 0.5rem 0 0.7rem; color: var(--ink); text-decoration: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.nav a:hover { border-bottom-color: var(--rule); }
+.nav a[aria-current="page"] { border-bottom-color: var(--ink); }
+
+.menu-btn {
+  display: none; font: 500 0.875rem/1 var(--sans); color: var(--ink);
+  background: none; border: 1px solid var(--ink); border-radius: 0; padding: 0.55rem 0.8rem; cursor: pointer;
+}
+
+@media (max-width: 47.99rem) {
+  .js .menu-btn { display: block; }
+  .nav-lists { display: block; padding: 0.6rem 0 0.2rem; }
+  .js .nav-lists { display: none; }
+  .js .nav[data-open] .nav-lists { display: block; }
+  .nav ul { display: block; }
+  .nav ul + ul { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--rule); }
+  .nav a { padding: 0.7rem 0; font-size: 1rem; border-bottom: 0; margin: 0; }
+  .nav a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.3em; }
+  .site-head .frame { padding-bottom: 0.9rem; }
+  main.frame { padding-top: 2.4rem; }
+}
+
+/* Figures: numbered, captioned, click to enlarge */
+figure { margin: 2.4rem 0 2.6rem; }
+figure .fig-open { display: block; padding: 0; border: 1px solid var(--rule); background: #fff; cursor: zoom-in; width: 100%; }
+figure .fig-open img { width: 100%; }
+figcaption { font: 400 0.9rem/1.5 var(--sans); margin-top: 0.7rem; max-width: var(--measure); }
+figcaption .fig-no { font-family: var(--mono); font-size: 0.82rem; color: var(--muted); margin-right: 0.5rem; }
+figcaption .fig-title { font-weight: 500; }
+figcaption .fig-text { display: block; color: var(--muted); margin-top: 0.2rem; }
+main > figure.small { max-width: var(--measure); }
+
+dialog.fig-dialog { border: 0; padding: 0; background: var(--ground); max-width: 96vw; max-height: 96vh; }
+dialog.fig-dialog::backdrop { background: rgba(20, 22, 26, 0.82); }
+dialog.fig-dialog img { max-width: 96vw; max-height: 86vh; width: auto; }
+dialog.fig-dialog form { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0.8rem; font: 400 0.85rem/1.3 var(--sans); }
+dialog.fig-dialog button { font: 500 0.85rem/1 var(--sans); background: none; border: 1px solid var(--ink); padding: 0.45rem 0.7rem; cursor: pointer; color: var(--ink); }
+
+/* Footer */
+.site-foot { border-top: 1px solid var(--rule); font: 400 0.85rem/1.5 var(--sans); color: var(--muted); }
+.site-foot .frame { padding-top: 1.4rem; padding-bottom: 2.2rem; display: flex; flex-wrap: wrap; gap: 0.4rem 2rem; justify-content: space-between; }
+.site-foot a { color: var(--muted); }
+.site-foot p { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Footer stays at the bottom on short pages. */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+main.frame { flex: 1; width: 100%; }

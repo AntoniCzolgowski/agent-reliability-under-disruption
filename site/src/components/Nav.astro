@@ -1,0 +1,44 @@
+---
+import { SITE_TITLE, COURSE_TABS, EXTRA_TABS, url } from "../site";
+
+interface Props {
+  current?: string;
+}
+const { current } = Astro.props;
+---
+
+<header class="site-head">
+  <div class="frame">
+    <div class="head-row">
+      <a class="site-name" href={url("")} aria-current={current === "home" ? "page" : undefined}>{SITE_TITLE}</a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav-lists">Menu</button>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <div class="nav-lists" id="nav-lists">
+        <ul>
+          {COURSE_TABS.map((t) => (
+            <li><a href={url(`${t.slug}/`)} aria-current={current === t.slug ? "page" : undefined}>{t.label}</a></li>
+          ))}
+        </ul>
+        <ul>
+          {EXTRA_TABS.map((t) => (
+            <li><a href={url(`${t.slug}/`)} aria-current={current === t.slug ? "page" : undefined}>{t.label}</a></li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script is:inline>
+  (function () {
+    var btn = document.querySelector(".menu-btn");
+    var nav = document.querySelector(".nav");
+    if (!btn || !nav) return;
+    btn.addEventListener("click", function () {
+      var open = nav.toggleAttribute("data-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.textContent = open ? "Close" : "Menu";
+    });
+  })();
+</script>

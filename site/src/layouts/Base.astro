@@ -1,0 +1,74 @@
+---
+import "@fontsource/brygada-1918/latin-400.css";
+import "@fontsource/brygada-1918/latin-ext-400.css";
+import "@fontsource/brygada-1918/latin-400-italic.css";
+import "@fontsource/brygada-1918/latin-ext-400-italic.css";
+import "@fontsource/brygada-1918/latin-600.css";
+import "@fontsource/brygada-1918/latin-ext-600.css";
+import "@fontsource/chivo/latin-400.css";
+import "@fontsource/chivo/latin-ext-400.css";
+import "@fontsource/chivo/latin-500.css";
+import "@fontsource/chivo/latin-ext-500.css";
+import "@fontsource/chivo-mono/latin-400.css";
+import "@fontsource/chivo-mono/latin-ext-400.css";
+import "../styles/global.css";
+
+import bodyFont from "@fontsource/brygada-1918/files/brygada-1918-latin-400-normal.woff2?url";
+import headFont from "@fontsource/chivo/files/chivo-latin-500-normal.woff2?url";
+
+import Nav from "../components/Nav.astro";
+import { SITE_TITLE, AUTHOR, REPO_URL, url } from "../site";
+
+interface Props {
+  title?: string;
+  description: string;
+  current?: string;
+}
+
+const { title, description, current } = Astro.props;
+const pageTitle = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const shareImage = new URL(url("share.png"), Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={AUTHOR} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={url("favicon.svg")} />
+    <link rel="preload" href={bodyFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={headFont} as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_TITLE} />
+    <meta property="og:title" content={title ?? SITE_TITLE} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title ?? SITE_TITLE} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
+    <script is:inline>document.documentElement.classList.add("js");</script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <Nav current={current} />
+    <main id="main" class="frame">
+      <slot />
+    </main>
+    <footer class="site-foot">
+      <div class="frame">
+        <p>{SITE_TITLE}. {AUTHOR}, CSCI 5612 course project, 2026.</p>
+        <p><a href={REPO_URL}>Code on GitHub</a></p>
+        <!-- AI-use note slot: written with Antoni before submission -->
+      </div>
+    </footer>
+  </body>
+</html>

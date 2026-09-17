@@ -1,0 +1,17 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+export async function getStaticPaths() {
+  const tabs = await getCollection("tabs");
+  return tabs.map((tab) => ({ params: { slug: tab.id }, props: { tab } }));
+}
+
+const { tab } = Astro.props;
+const { Content } = await render(tab);
+---
+
+<Base title={tab.data.title} description={tab.data.description} current={tab.id}>
+  <h1>{tab.data.title}</h1>
+  <Content />
+</Base>
