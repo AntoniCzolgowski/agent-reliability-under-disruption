@@ -1,9 +1,9 @@
 ---
 title: "PCA"
-description: "PCA tab of the course project Agent reliability under disruption. This tab opens with Part 2."
+description: "PCA tab of the course project Agent reliability under disruption."
 ---
 
-<p class="stub-line">Part 2, due 9 Oct 2026.</p>
+<p class="stub-line">This tab is filled in a later part of the project.</p>
 
 ## Overview
 

@@ -1,9 +1,9 @@
 ---
 title: "NN"
-description: "NN tab of the course project Agent reliability under disruption. This tab opens with Part 5."
+description: "NN tab of the course project Agent reliability under disruption."
 ---
 
-<p class="stub-line">Part 5, due date to be confirmed.</p>
+<p class="stub-line">This tab is filled in a later part of the project.</p>
 
 ## Overview
 

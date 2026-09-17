@@ -1,0 +1,248 @@
+venue_cat_name,group
+Art Gallery,Culture/Leisure
+Art Museum,Culture/Leisure
+Arts & Entertainment,Culture/Leisure
+Casino,Culture/Leisure
+Cemetery,Culture/Leisure
+Church,Culture/Leisure
+Comedy Club,Culture/Leisure
+Concert Hall,Culture/Leisure
+Convention Center,Culture/Leisure
+Event Space,Culture/Leisure
+Fair,Culture/Leisure
+Gaming Cafe,Culture/Leisure
+General Entertainment,Culture/Leisure
+Historic Site,Culture/Leisure
+History Museum,Culture/Leisure
+Hotel,Culture/Leisure
+Internet Cafe,Culture/Leisure
+Mosque,Culture/Leisure
+Movie Theater,Culture/Leisure
+Museum,Culture/Leisure
+Music Venue,Culture/Leisure
+Performing Arts Venue,Culture/Leisure
+Planetarium,Culture/Leisure
+Pool Hall,Culture/Leisure
+Public Art,Culture/Leisure
+Science Museum,Culture/Leisure
+Shrine,Culture/Leisure
+Spiritual Center,Culture/Leisure
+Synagogue,Culture/Leisure
+Temple,Culture/Leisure
+Theater,Culture/Leisure
+Afghan Restaurant,Food
+African Restaurant,Food
+American Restaurant,Food
+Arepa Restaurant,Food
+Argentinian Restaurant,Food
+Asian Restaurant,Food
+Australian Restaurant,Food
+BBQ Joint,Food
+Bagel Shop,Food
+Bakery,Food
+Brazilian Restaurant,Food
+Breakfast Spot,Food
+Burger Joint,Food
+Burrito Place,Food
+Café,Food
+Cajun / Creole Restaurant,Food
+Caribbean Restaurant,Food
+Chinese Restaurant,Food
+Coffee Shop,Food
+Cuban Restaurant,Food
+Cupcake Shop,Food
+Deli / Bodega,Food
+Dessert Shop,Food
+Dim Sum Restaurant,Food
+Diner,Food
+Donut Shop,Food
+Dumpling Restaurant,Food
+Eastern European Restaurant,Food
+Ethiopian Restaurant,Food
+Falafel Restaurant,Food
+Fast Food Restaurant,Food
+Fish & Chips Shop,Food
+Food,Food
+Food & Drink Shop,Food
+Food Truck,Food
+French Restaurant,Food
+Fried Chicken Joint,Food
+Gastropub,Food
+German Restaurant,Food
+Gluten-free Restaurant,Food
+Hot Dog Joint,Food
+Ice Cream Shop,Food
+Indian Restaurant,Food
+Italian Restaurant,Food
+Japanese Restaurant,Food
+Korean Restaurant,Food
+Latin American Restaurant,Food
+Mac & Cheese Joint,Food
+Malaysian Restaurant,Food
+Mediterranean Restaurant,Food
+Mexican Restaurant,Food
+Middle Eastern Restaurant,Food
+Moroccan Restaurant,Food
+Peruvian Restaurant,Food
+Pizza Place,Food
+Portuguese Restaurant,Food
+Ramen / Noodle House,Food
+Restaurant,Food
+Salad Place,Food
+Sandwich Place,Food
+Scandinavian Restaurant,Food
+Seafood Restaurant,Food
+Snack Place,Food
+Soup Place,Food
+South American Restaurant,Food
+Southern / Soul Food Restaurant,Food
+Spanish Restaurant,Food
+Steakhouse,Food
+Sushi Restaurant,Food
+Swiss Restaurant,Food
+Taco Place,Food
+Tapas Restaurant,Food
+Tea Room,Food
+Thai Restaurant,Food
+Turkish Restaurant,Food
+Vegetarian / Vegan Restaurant,Food
+Vietnamese Restaurant,Food
+Wings Joint,Food
+Fraternity House,Home
+Home (private),Home
+Housing Development,Home
+Neighborhood,Home
+Residential Building (Apartment / Condo),Home
+Sorority House,Home
+Bar,Nightlife
+Beer Garden,Nightlife
+Brewery,Nightlife
+Distillery,Nightlife
+Nightlife Spot,Nightlife
+Other Nightlife,Nightlife
+Winery,Nightlife
+City,Other
+Moving Target,Other
+Aquarium,Outdoors
+Athletic & Sport,Outdoors
+Beach,Outdoors
+Bowling Alley,Outdoors
+Bridge,Outdoors
+Campground,Outdoors
+Castle,Outdoors
+Garden,Outdoors
+Gym / Fitness Center,Outdoors
+Harbor / Marina,Outdoors
+Other Great Outdoors,Outdoors
+Outdoors & Recreation,Outdoors
+Park,Outdoors
+Playground,Outdoors
+Plaza,Outdoors
+Pool,Outdoors
+Racetrack,Outdoors
+Rest Area,Outdoors
+River,Outdoors
+Road,Outdoors
+Scenic Lookout,Outdoors
+Sculpture Garden,Outdoors
+Ski Area,Outdoors
+Stadium,Outdoors
+Zoo,Outdoors
+Animal Shelter,Shopping/Services
+Antique Shop,Shopping/Services
+Arcade,Shopping/Services
+Arts & Crafts Store,Shopping/Services
+Automotive Shop,Shopping/Services
+Bike Shop,Shopping/Services
+Board Shop,Shopping/Services
+Bookstore,Shopping/Services
+Bridal Shop,Shopping/Services
+Camera Store,Shopping/Services
+Candy Store,Shopping/Services
+Car Dealership,Shopping/Services
+Car Wash,Shopping/Services
+Clothing Store,Shopping/Services
+Convenience Store,Shopping/Services
+Cosmetics Shop,Shopping/Services
+Department Store,Shopping/Services
+Design Studio,Shopping/Services
+Drugstore / Pharmacy,Shopping/Services
+Electronics Store,Shopping/Services
+Financial or Legal Service,Shopping/Services
+Flea Market,Shopping/Services
+Flower Shop,Shopping/Services
+Funeral Home,Shopping/Services
+Furniture / Home Store,Shopping/Services
+Garden Center,Shopping/Services
+Gift Shop,Shopping/Services
+Hardware Store,Shopping/Services
+Hobby Shop,Shopping/Services
+Jewelry Store,Shopping/Services
+Laundry Service,Shopping/Services
+Mall,Shopping/Services
+Market,Shopping/Services
+Miscellaneous Shop,Shopping/Services
+Mobile Phone Shop,Shopping/Services
+Motorcycle Shop,Shopping/Services
+Music Store,Shopping/Services
+Nail Salon,Shopping/Services
+Newsstand,Shopping/Services
+Paper / Office Supplies Store,Shopping/Services
+Pet Service,Shopping/Services
+Pet Store,Shopping/Services
+Professional & Other Places,Shopping/Services
+Record Shop,Shopping/Services
+Recycling Facility,Shopping/Services
+Salon / Barbershop,Shopping/Services
+Shop & Service,Shopping/Services
+Smoke Shop,Shopping/Services
+Spa / Massage,Shopping/Services
+Sporting Goods Shop,Shopping/Services
+Storage Facility,Shopping/Services
+Tanning Salon,Shopping/Services
+Thrift / Vintage Store,Shopping/Services
+Toy / Game Store,Shopping/Services
+Video Game Store,Shopping/Services
+Video Store,Shopping/Services
+Airport,Transit
+Bike Rental / Bike Share,Transit
+Bus Station,Transit
+Ferry,Transit
+Gas Station / Garage,Transit
+General Travel,Transit
+Light Rail,Transit
+Parking,Transit
+Rental Car Location,Transit
+Subway,Transit
+Taxi,Transit
+Train Station,Transit
+Travel & Transport,Transit
+Travel Lounge,Transit
+Bank,Work/Institutions
+Building,Work/Institutions
+College & University,Work/Institutions
+College Academic Building,Work/Institutions
+College Stadium,Work/Institutions
+College Theater,Work/Institutions
+Community College,Work/Institutions
+Elementary School,Work/Institutions
+Embassy / Consulate,Work/Institutions
+Factory,Work/Institutions
+General College & University,Work/Institutions
+Government Building,Work/Institutions
+High School,Work/Institutions
+Law School,Work/Institutions
+Library,Work/Institutions
+Medical Center,Work/Institutions
+Medical School,Work/Institutions
+Middle School,Work/Institutions
+Military Base,Work/Institutions
+Music School,Work/Institutions
+Nursery School,Work/Institutions
+Office,Work/Institutions
+Photography Lab,Work/Institutions
+Post Office,Work/Institutions
+School,Work/Institutions
+Student Center,Work/Institutions
+Trade School,Work/Institutions
+University,Work/Institutions

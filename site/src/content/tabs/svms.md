@@ -1,9 +1,9 @@
 ---
 title: "SVMs"
-description: "SVMs tab of the course project Agent reliability under disruption. This tab opens with Part 4."
+description: "SVMs tab of the course project Agent reliability under disruption."
 ---
 
-<p class="stub-line">Part 4, due date to be confirmed.</p>
+<p class="stub-line">This tab is filled in a later part of the project.</p>
 
 ## Overview
 
