@@ -47,7 +47,7 @@ const INTRO_MS = 4600;             // entry move: from far away and behind, half
 async function loadAtlas(dataUrl: string): Promise<{ header: HeroHeader; ord: Uint8Array[]; emg: Uint8Array[] }> {
   const header: HeroHeader = await (await fetch(`${dataUrl}hero.json`)).json();
   const blob = await (await fetch(`${dataUrl}${header.atlas}`)).blob();
-  const bitmap = await createImageBitmap(blob, { colorSpaceConversion: "none", premultiplyAlpha: "none", imageOrientation: "none" });
+  const bitmap = await createImageBitmap(blob, { colorSpaceConversion: "none", premultiplyAlpha: "none" });
   const g = header.grid, w = header.frame_columns * g, h = header.frame_rows * g;
   const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
   const ctx = cv.getContext("2d", { willReadFrequently: true })!;

@@ -8,4 +8,5 @@ export default defineConfig({
   trailingSlash: "always",
   build: { format: "directory" },
   integrations: [mdx()],
+  vite: { build: { sourcemap: true } },
 });

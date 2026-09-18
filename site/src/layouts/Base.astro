@@ -59,7 +59,8 @@ const shareImage = new URL(url("share.png"), Astro.site).href;
       document.documentElement.classList.add("js");
       // scrollbar width, so a full-bleed block can span the window without sideways scroll
       var sbw = function () { document.documentElement.style.setProperty("--sbw", window.innerWidth - document.documentElement.clientWidth + "px"); };
-      sbw(); addEventListener("resize", sbw);
+      sbw(); addEventListener("resize", sbw); addEventListener("load", sbw);
+      if (window.ResizeObserver) new ResizeObserver(sbw).observe(document.documentElement);
     </script>
   </head>
   <body>
