@@ -14,3 +14,6 @@ dist/
 Thumbs.db
 __pycache__/
 .ipynb_checkpoints/
+
+# local-only pages for design options, never published
+site/src/pages/dev/
