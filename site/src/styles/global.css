@@ -148,6 +148,7 @@ dialog.fig-dialog button { font: 500 0.85rem/1 var(--sans); background: none; bo
 .site-foot .frame { padding-top: 1.4rem; padding-bottom: 2.2rem; display: flex; flex-wrap: wrap; gap: 0.4rem 2rem; justify-content: space-between; }
 .site-foot a { color: var(--muted); }
 .site-foot p { margin: 0; }
+.site-foot .ai-note { flex-basis: 100%; max-width: 48rem; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
