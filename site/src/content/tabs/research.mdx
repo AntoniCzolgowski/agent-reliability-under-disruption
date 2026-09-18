@@ -7,18 +7,18 @@ description: "The research study that grows out of the course project: when a si
 
 ## The question
 
-Researchers build simulated populations out of agents, where each agent is a simulated stand-in for one real person. The position taken here is that such an agent should be built from records of what its person actually did and judged on decisions it has not seen. An agent is usually judged on ordinary days. The study asks what happens to that judgement when ordinary days stop. When an emergency interrupts daily life, how fast does an agent stop being a reliable description of its person, and how much fresh evidence does it need before it is reliable again?
+The course tabs build the standard ML models on this data. The research asks a additional question : when does an agent built from a person's ordinary days stop being a reliable description of that person, and how much fresh evidence brings it back? YJMob100K makes this testable, because it follows the same 25,000 people through 60 ordinary days and 15 days of an emergency.
 
-YJMob100K makes the question testable, because it follows the same 25,000 people through 60 ordinary days and then 15 days of an emergency.
+## Four studies
 
-## How the study is set up
+*Study 1, place semantics (supporting).* Foursquare check-ins carry real place types, so I can test how well the kind of place is predicted from context alone: the cell, the hour, the weekday and the person's history. The classifier tabs of the course do this work. A second, exploratory step asks whether the 85 anonymous place categories of YJMob100K can be recovered from the daily rhythm of each cell, validated first on Foursquare with the names hidden. Any recovered label will be reported as inferred, never as a feature of the dataset.
 
-The core study builds simple models of each person's movement from days 0 to 44 and checks them on days 45 to 59. The models are then frozen. They are tested on days 67 to 74, first with no data from after day 60 and then with 1, 3 or 7 days of it. Every model gets the same information, so differences come from how a model takes new evidence in. People were split once into a development group and an evaluation group, and the evaluation group is only used for the final scores.
+*Study 2, behaviour change (supporting).* Person profiles from the ordinary days, clustering and PCA on the course tabs, and a plain description of what changed between days 45 to 59 and 60 to 74. The observation rate is reported as an outcome in its own right, since being recorded at all changes with the emergency.
 
-Two smaller studies support it. One uses the Foursquare check-ins from Tokyo to test how well the kind of place can be guessed from time and location alone. The other describes how recorded behaviour changed between the ordinary period and the emergency, and the first step of that description is on the [DataPrep_EDA](../dataprep_eda/) tab.
+*Study 3, reliability (core).* Simple agents of each person's movement, from a last-cell rule to a learned mix of long-run and recent habits, trained on days 0 to 44, validated on 45 to 59 and frozen. Each agent is tested on days 67 to 74 with 0, 1, 3 or 7 days of post-change data, under equal information, so the update mechanism is a thing that differs. Context contains: movement history alone, history plus the anonymous place counts, and history plus the Study 1 semantics if its validation passes. Outcomes are next-position error, short rollouts of 3 and 7 steps, and improvement over the frozen agent, all by pre-change behaviour group. Two hypotheses: ordinary-period validation does not fully predict post-change reliability, and fresh evidence helps with diminishing returns. Both can fail.
 
-A later extension asks whether an agent can learn when to update itself if it is only allowed a few updates.
+*Study 4, a learned update schedule (RL extension).* Study 3 fixes when an agent is updated. Study 4 lets an agent learn it. Under a budget of k updates, an agent sees a small state each day, yesterday's error, its trend, updates left and the weekly phase, and chooses to keep or to update. The reward is the negative prediction error, scored by replaying the recorded observations. Tabular Q-learning written from scratch in NumPy, trained on pre-emergency days only, frozen before day 60, and compared under the same budget with never updating, updating on the first k days, the most recent k days, and a threshold rule. If the threshold rule is enough, that is the finding.
 
 ## Limits
 
-The data holds one emergency in one undisclosed city. The study does not try to identify the city or any person, and it does not align the grid with a map. Results that go against the hypotheses will be reported like any others.
+One emergency in one undisclosed city, so nothing transfers to emergencies in general. The study does not try to identify the city or any person, and it does not align the grid with a map. Results that go against the hypotheses will be reported like any others.
