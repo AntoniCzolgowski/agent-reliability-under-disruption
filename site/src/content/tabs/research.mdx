@@ -1,6 +1,24 @@
 ---
 title: "Research"
-description: "The research extension of the project, separate from the graded course work."
+description: "The research study that grows out of the course project: when a simulated stand-in for a person stops being reliable, and what brings it back."
 ---
 
-<p class="todo">[DRAFT PENDING: Research stub, drafted for Antoni's review]</p>
+<p class="lede">The course project shares its data with a research study by the same author, the first in his line of work on agents as models of how people decide and act.</p>
+
+## The question
+
+Researchers build simulated populations out of agents, where each agent is a simulated stand-in for one real person. The position taken here is that such an agent should be built from records of what its person actually did and judged on decisions it has not seen. An agent is usually judged on ordinary days. The study asks what happens to that judgement when ordinary days stop. When an emergency interrupts daily life, how fast does an agent stop being a reliable description of its person, and how much fresh evidence does it need before it is reliable again?
+
+YJMob100K makes the question testable, because it follows the same 25,000 people through 60 ordinary days and then 15 days of an emergency.
+
+## How the study is set up
+
+The core study builds simple models of each person's movement from days 0 to 44 and checks them on days 45 to 59. The models are then frozen. They are tested on days 67 to 74, first with no data from after day 60 and then with 1, 3 or 7 days of it. Every model gets the same information, so differences come from how a model takes new evidence in. People were split once into a development group and an evaluation group, and the evaluation group is only used for the final scores.
+
+Two smaller studies support it. One uses the Foursquare check-ins from Tokyo to test how well the kind of place can be guessed from time and location alone. The other describes how recorded behaviour changed between the ordinary period and the emergency, and the first step of that description is on the [DataPrep_EDA](../dataprep_eda/) tab.
+
+A later extension asks whether an agent can learn when to update itself if it is only allowed a few updates.
+
+## Limits
+
+The data holds one emergency in one undisclosed city. The study does not try to identify the city or any person, and it does not align the grid with a map. Results that go against the hypotheses will be reported like any others.

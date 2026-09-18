@@ -1,6 +1,205 @@
 ---
 title: "DataPrep_EDA"
-description: "Where the data comes from, how it was cleaned, and a first look at it in figures."
+description: "Where the data comes from, how it was checked and cleaned, and a first look at it in sixteen figures."
 ---
 
-<p class="todo">[DRAFT PENDING: data sources, raw and clean table images, cleaning steps, figures and code links are drafted next for Antoni's review]</p>
+import Figure from "../../components/Figure.astro";
+import f01 from "../../assets/figures/f01_yjmob_coverage_by_day.png";
+import f02 from "../../assets/figures/f02_yjmob_coverage_by_hour.png";
+import f03 from "../../assets/figures/f03_yjmob_rows_per_person.png";
+import f04 from "../../assets/figures/f04_yjmob_step_sizes.png";
+import f05 from "../../assets/figures/f05_yjmob_flicker_return_rate.png";
+import f06 from "../../assets/figures/f06_yjmob_occupancy_map.png";
+import f07 from "../../assets/figures/f07_yjmob_poi_map.png";
+import f08 from "../../assets/figures/f08_yjmob_poi_categories.png";
+import f09 from "../../assets/figures/f09_yjmob_coverage_person_before_after.png";
+import f10 from "../../assets/figures/f10_fsq_checkins_per_month.png";
+import f11 from "../../assets/figures/f11_fsq_group_share.png";
+import f12 from "../../assets/figures/f12_fsq_hour_by_group.png";
+import f13 from "../../assets/figures/f13_fsq_weekday_weekend.png";
+import f14 from "../../assets/figures/f14_fsq_checkin_map.png";
+import f15 from "../../assets/figures/f15_fsq_user_activity.png";
+import f16 from "../../assets/figures/f16_yjmob_day_types.png";
+import t01 from "../../assets/figures/t01_yjmob_raw.png";
+import t02 from "../../assets/figures/t02_yjmob_clean.png";
+import t03 from "../../assets/figures/t03_poi_raw.png";
+import t04 from "../../assets/figures/t04_poi_clean.png";
+import t05 from "../../assets/figures/t05_fsq_raw.png";
+import t06 from "../../assets/figures/t06_fsq_clean.png";
+
+<p class="lede">The project uses two published research datasets. Both were downloaded as files from the pages their authors maintain, and no API was involved.</p>
+
+## Where the data comes from
+
+### YJMob100K
+
+The main dataset is YJMob100K, published by Takahiro Yabe and six co-authors in 2024 together with a paper in the journal Scientific Data. This project uses its second file, which follows 25,000 people for 75 days. Each day is cut into 48 half-hour slots, and the area is a grid of 200 by 200 cells, each 500 m wide. One row says that a person was seen in a cell during a slot. The same release has a file that counts places of 85 kinds in every cell.
+
+The authors state that the data comes from Japan. They withhold the city and the dates, and they do not say what the emergency on days 60 to 74 was. This project does not try to find out. The dataset was chosen because it records the same people before and during a disruption, which is what the questions on the Introduction tab need.
+
+The files were downloaded from Zenodo, where they are published under the CC BY 4.0 licence. Their MD5 checksums are verified at the start of every run of the preparation script.
+
+### Foursquare check-ins in Tokyo
+
+The second dataset holds 573,703 Foursquare check-ins made in Tokyo by 2,293 users between April 2012 and February 2013, collected by Dingqi Yang and colleagues. A check-in is a voluntary post that says a user is at a named venue, and every venue has a category such as Train Station or Coffee Shop. It was added because YJMob100K has no place names. In the Tokyo data the kind of place is known, so a method that guesses the kind of place from time and location can be tested against a true answer before anything similar is tried on anonymous cells.
+
+Tokyo was picked because both datasets come from Japan. The two are never matched on a map.
+
+### Links to the raw data
+
+- [YJMob100K on Zenodo, record 10836269](https://zenodo.org/records/10836269). Files used: `yjmob100k-dataset2.csv.gz`, `cell_POIcat.csv.gz` and `POI_datacategories.csv`. Paper: [Yabe et al. 2024, Scientific Data 11, 397](https://doi.org/10.1038/s41597-024-03237-9).
+- [NYC and Tokyo Check-in Dataset on Dingqi Yang's page](https://sites.google.com/site/yangdingqi/home/foursquare-dataset). File used: `dataset_TSMC2014_TKY.txt` inside `dataset_tsmc2014.zip`. The authors ask for this paper to be cited: Dingqi Yang, Daqing Zhang, Vincent W. Zheng and Zhiyong Yu, [Modeling User Activity Preference by Leveraging User Spatial Temporal Characteristics in LBSNs](https://doi.org/10.1109/TSMC.2014.2327053), IEEE Transactions on Systems, Man, and Cybernetics: Systems 45(1), 129-142, 2015.
+
+## The raw data
+
+<Figure label="Table" n={1} title="YJMob100K, raw" src={t01} small eager alt="Table image with the columns uid, d, t, x and y and eight rows for person 0 on day 0. The slot numbers jump from 2 to 5 and from 5 to 8.">
+The first eight rows of the raw YJMob100K file, one row per observation: person (uid), day (d), half-hour slot (t) and grid cell (x, y). The slot numbers skip 3, 4, 6, 7 and 10, which is how half-hours without a record appear in the file.
+</Figure>
+
+<Figure label="Table" n={2} title="Places per cell, raw" src={t03} small alt="Table image with the columns x, y, POIcategory and POI_count and eight rows, the first five for cell 1, 1.">
+The first eight rows of the raw places file: a grid cell, a category number from 1 to 85, and how many places of that category the cell holds. The categories are numbers only, because the authors do not publish which name belongs to which number.
+</Figure>
+
+<Figure label="Table" n={3} title="Foursquare Tokyo, raw" src={t05} alt="Table image with eight columns: user id, venue id, venue category id, venue category name, latitude, longitude, time-zone offset and UTC time, and six rows of check-ins starting on 3 April 2012.">
+The first six rows of the raw Tokyo check-in file: anonymised user, venue, venue category, coordinates, time-zone offset in minutes and the time in UTC. The local hour of a visit is not in the file and has to be worked out from the last two columns.
+</Figure>
+
+## Cleaning
+
+### YJMob100K: checks first, then flags
+
+The raw file has 29,389,749 rows. It has no missing values, no duplicate rows and no person with two records in the same slot. Every value lies inside the documented range and the file is already sorted by person and time. There was nothing to repair, so cleaning here means adding the columns that later analysis needs and marking records that call for caution. No row is deleted.
+
+Only 32.7% of all person-slots have a record (Figure 1). Where a person was during an unrecorded half-hour is unknown, and nothing on this site fills those gaps in.
+
+<Figure n={1} title="Share of people observed per day" src={f01} alt="Line chart of the percentage of person-slots observed for days 0 to 74. The line moves between about 35 percent on most days and 27 to 31 percent on marked weekend-like and holiday-like days. Day 27 drops to 22.6 percent. From day 60, shaded as the emergency, the whole line sits about three to four points lower.">
+The share of all person-slots that have a record, for each of the 75 days, with filled dots on weekend-like days and open dots on holiday-like days. The weekly rhythm runs through the whole period, the level drops from day 60, and day 27 is the lowest day of all.
+</Figure>
+
+The steps, in the order the script runs them:
+
+1. Time columns are added: the type of day (described in the next section), one of four windows (days 0-44, 45-59, 60-66 and 67-74) that later separate what a model may learn from and what it is tested on, and a running slot number.
+2. Each record is linked to the same person's previous record, with the gap in slots and the distance in cells. A record that follows the previous one by exactly one slot is marked `adjacent`. That is true for 69.8% of records, and movement is only measured on those.
+3. Moves of more than 100 cells (50 km) within 30 minutes are marked `big_jump`. They make up 0.04% of records. The distribution of move sizes has a smooth tail with no move above 100 km, so these are treated as fast long trips and kept.
+4. One-cell moves that are back in the starting cell one slot later are marked `flicker_mid`, 3.5% of records. One-cell moves return 27.6% of the time, against 2.5 to 4% for moves of five cells or more (Figure 7). The working explanation is that a person near a cell border gets logged on either side of it. This is a hypothesis about data quality, and the flag lets any later result be checked with and without these records.
+5. People are split once, by person, into a development group (70%, 17,500 people) and an evaluation group (7,500 people) with the fixed seed 20260917. A person is eligible for later evaluation with at least 20 adjacent pairs of records in every window. The rule was set on the development group, where it keeps 96.3% of people, and it keeps 95.7% of the evaluation group.
+
+### Types of day
+
+The dataset has no calendar, so each day gets a weekly phase and a type from the data itself. On days 0 to 59 the phase is the day number modulo 7. On days 60 to 74 it is the day number plus four, modulo 7, because the weekly rhythm of the emergency block is shifted by four days. Phases 0 and 6 are weekend-like, 21 days in all, among them 65, 66, 72 and 73 in the emergency. Six days (1, 8, 29, 37, 50 and 67) sit on a weekday phase but run like a rest day and are marked `holiday_like`. Every other day is a workday: 38 of days 0 to 59 and 10 of days 60 to 74.
+
+The author set these rules from two signals in the data that do not depend on how many people are observed. The first is the shape of the day: the observation rate between 07:30 and 08:30 divided by the rate between 10:00 and 11:30. All 75 days fall into two bands with nothing between them, above 1.05 with a morning peak or below 0.90 without one (Figure 2).
+
+<Figure n={2} title="The morning peak tells workdays from rest days" src={f16} alt="Scatter chart with one dot per day, days 0 to 74. The vertical axis is the ratio of the observation rate at 07:30 to 08:30 over the rate at 10:00 to 11:30. Workdays form a band between 1.05 and 1.17. Weekend-like and holiday-like days form a band between 0.70 and 0.90. A dashed line at 1.0 separates the bands, and the pattern is the same inside the shaded emergency period.">
+For each day, the observation rate at 07:30-08:30 divided by the rate at 10:00-11:30. Every workday sits above the dashed line and every weekend-like or holiday-like day below it, before day 60 and after.
+</Figure>
+
+The second signal is location. For 24,245 people a home cell can be set as the cell where they are most often recorded between 00:00 and 06:00 on days 0 to 59. On workdays about 8.5% of the records between 10:00 and 16:00 are at that cell. On rest days it is 12 to 15%. This sorts the 75 days the same way as the morning ratio.
+
+The four-day shift comes from an alignment test. Each day's profile over the 48 slots was compared with the typical profile of every day of the week on days 0 to 59, for all seven possible shifts. On days 45 to 59, where the right answer is a shift of zero, the test returns zero. On days 60 to 74 a shift of four days fits best by a wide margin (error 0.97, against 1.59 for the next best shift). The weekly rhythm shifts by four days at day 60. The dataset paper gives no dates, so the shift is reported as a property of the data and no reason is offered.
+
+The six holiday-like days have no morning peak and low coverage, like a public holiday. Day 27 is a weekend-like day with the lowest coverage of all 75 days, 22.6%. It stays in the data and is left out of averages by type of day.
+
+The preparation script checks the typing on every run. It computes the morning ratio for every day and stops with an error if any day disagrees with its type.
+
+A sweep over every day and slot found two recording artefacts. Day 66 has a gap at 23:00, with 1.4% of people observed against 14% on day 73, the matching day a week later. The 00:00 slot is thin on all of days 60 to 74, with 9.3% of people observed against 13.8% on days 0 to 59. Both are documented, and no records are removed.
+
+With the days typed, like can be compared with like (Figure 3). In the emergency people are observed less on every kind of day: 10.4% less on workdays, from 35.7% of slots to 32.0%, and 12 to 17% less on rest days. The shape of the day holds. Workdays keep their 08:00 peak, at 49.0% of people observed against 53.8%, and it is still the highest point of the day.
+
+<Figure n={3} title="Observation rate through the day" src={f02} alt="Line chart of the percentage of people observed by hour of day, four curves. Workdays on days 0 to 59 rise steeply to a peak of 53.8 percent at 08:00 and stay near 48 to 52 percent until 18:00. Workdays on days 60 to 74 have the same shape about four to five points lower, peaking at 49 percent at 08:00. Weekend-like days rise slowly to about 43 percent at noon, and weekend-like days in the emergency follow the same shape lower, with a notch at 23:00.">
+The share of people observed in each half-hour, averaged over workdays and over weekend-like days, before day 60 (solid) and from day 60 (dashed). Each dashed curve is a lower copy of its solid one, and workdays keep the 08:00 peak.
+</Figure>
+
+### Places per cell
+
+The places file has 221,159 rows in long form: cell, category number, count. It was turned into a table with one row per cell and one column per category, 20,146 cells by 85 categories, and joined to the 30,277 cells where anyone was ever recorded. Occupied cells without a row in the places file get zeros and `has_poi = False`. They hold 2.8% of all records. The 85 category names ship as a plain list without saying which number is which, so the numbers are kept as they are and no names are attached.
+
+### Foursquare Tokyo
+
+1. 577 exact duplicate rows were dropped, which leaves 573,126 check-ins.
+2. Local time was set to Japan time (UTC+9) for every row. 27 check-ins carry a different offset although the venue is in Tokyo. They are kept and marked `tz_flag`.
+3. Stray whitespace in category names was normalised, which leaves 247 distinct names.
+4. Coordinates were binned to a local grid of 500 m cells, 80 by 80, with 3,853 cells in use. The grid has its own arbitrary origin and is never aligned with the YJMob100K grid. Only the cell size is shared.
+5. Hour, weekday, weekend and month were derived from the local time.
+6. The 247 category names were folded into eight coarse place types plus Other, which holds 167 check-ins. The grouping uses keyword rules. The rules were drafted with the help of a large language model (Claude), every one of the 247 assignments was then reviewed by hand, and the full mapping is published with the code so it can be audited.
+
+## The cleaned data
+
+<Figure label="Table" n={4} title="YJMob100K analysis table, cleaned" src={t02} alt="Table image with eight rows for person 1 and sixteen columns: the five raw columns followed by phase, weekend, holiday_like, window, gap_prev, step_prev, adjacent, big_jump, flicker_mid, split and eligible.">
+The same kind of rows after cleaning, here for person 1, with the derived columns to the right of the original five. Each record now carries its day type, its window, the link to its previous record and the three flags described above.
+</Figure>
+
+<Figure label="Table" n={5} title="Cell table, cleaned" src={t04} alt="Table image with eight rows and nine columns: x, y, five category count columns, has_poi and poi_total.">
+The cell table after cleaning, with one row per occupied grid cell and one column per category (9 of 87 columns shown). The column has_poi says whether the cell had any row in the raw places file, and poi_total is the sum over all 85 categories.
+</Figure>
+
+<Figure label="Table" n={6} title="Foursquare Tokyo, cleaned" src={t06} alt="Table image with six rows and ten columns: user id, venue category name, group, local time, cx, cy, hour, weekday, weekend and tz_flag.">
+The check-in table after cleaning (10 of 15 columns shown). Each check-in now carries a coarse place type (group), the local time, a 500 m grid cell (cx, cy) and weekday fields.
+</Figure>
+
+The five cleaned tables can be downloaded from the release [Processed tables, Part 1](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/releases/tag/data-v1) on GitHub. The four YJMob100K tables are shared under CC BY 4.0, like their source. The Foursquare table follows its source, which states no licence and asks for the paper to be cited. The preparation script rebuilds all five from the original downloads in about 35 seconds.
+
+## A first look at YJMob100K
+
+<Figure n={4} title="Observation rate per person, before and after" src={f09} small alt="Scatter chart with one dot per person. Horizontal axis: percent of slots observed on days 45 to 59. Vertical axis: percent of slots observed on days 67 to 74. The dense part of the cloud lies between 20 and 45 percent on the horizontal axis and mostly below the dashed diagonal.">
+One dot per person: the share of half-hour slots with a record on days 45-59 (horizontal) against days 67-74 (vertical). Most of the cloud lies below the dashed diagonal, so most people are recorded less often in the emergency.
+</Figure>
+
+<Figure n={5} title="How much each person is observed" src={f03} alt="Histogram of records per person over the 75 days. The distribution starts near 570, peaks between 900 and 1,100 and has a long right tail past 2,500. A dashed line marks the median of 1,106.">
+The number of records each of the 25,000 people has over the 75 days. The median is 1,106 out of 3,600 possible half-hours, and nobody has fewer than 571.
+</Figure>
+
+<Figure n={6} title="How far people move between consecutive half-hours" src={f04} alt="Bar chart on a logarithmic vertical axis of the percentage of adjacent record pairs by number of cells moved, from 0 to 40. One cell is the tallest bar at about 26 percent, zero cells is about 19 percent, and the bars decline smoothly to well under 1 percent.">
+How many grid cells a person moves between two records exactly 30 minutes apart, on a logarithmic scale. The bars fall away smoothly, and a move of one cell (25.8%) is more common than staying in the same cell (18.9%).
+</Figure>
+
+<Figure n={7} title="One-cell moves often bounce straight back" src={f05} alt="Bar chart of the percentage of moves that return to the start cell in the next slot, by size of the first step in cells. One cell: 28 percent. Two cells: 13 percent. Three cells: 7 percent. From five cells on the bars level off between 2.5 and 4 percent.">
+Of all moves of a given size, the share that are back in the starting cell one slot later. One-cell moves return 28% of the time against 2.5 to 4% for moves of five cells or more, which is the evidence behind the flicker flag.
+</Figure>
+
+<Figure n={8} title="Where observations fall" src={f06} small alt="Map of the 200 by 200 grid coloured by the number of observations per cell on a logarithmic scale from 1 to over 10,000. Large connected areas are dark, several regions are white with no observations.">
+All 29.4 million records counted per 500 m cell of the 200 by 200 grid, on a logarithmic colour scale. Records fall in 30,277 of the 40,000 cells, and white cells have none.
+</Figure>
+
+<Figure n={9} title="Places per cell" src={f07} small alt="Map of the same 200 by 200 grid coloured by the number of points of interest per cell on a logarithmic scale. The dark areas match the dark areas of the observation map.">
+The number of places in each cell, on the same grid and a logarithmic colour scale. Cells with many places are also the cells with many records in Figure 8.
+</Figure>
+
+<Figure n={10} title="The 20 largest anonymous place categories" src={f08} alt="Horizontal bar chart of the 20 largest place categories, labelled only by numbers such as cat59 and cat81. The largest has about 43,000 places, the second about 39,000, and the bars fall to under 10,000 by the end of the list.">
+The 20 largest of the 85 numbered place categories, by number of places in the whole area. The largest has 42,806 places and the twentieth about 8,400, while the smallest category of all 85 has a single place.
+</Figure>
+
+## A first look at Foursquare Tokyo
+
+<Figure n={11} title="Check-ins per month" src={f10} alt="Bar chart of check-ins per month from April 2012 to February 2013 in thousands. May 2012 is the highest at about 94 thousand. September 2012 is highlighted at about 10 thousand and labelled collection gap.">
+Tokyo check-ins per month from April 2012 to February 2013. September 2012 has about 10,000 check-ins while every other month has more than 26,000, which points to a gap in how the data was collected.
+</Figure>
+
+<Figure n={12} title="What kind of place people check in at" src={f11} alt="Horizontal bar chart of the share of check-ins by place type. Transit 45.1 percent, Food 18.2, Shopping and Services 15.3, Work and Institutions 6.9, Outdoors 6.8, Culture and Leisure 4.2, Nightlife 2.8, Home 0.7.">
+The share of check-ins in each of the eight coarse place types. Transit takes 45% and Home under 1%, so the types are far from evenly represented.
+</Figure>
+
+<Figure n={13} title="When each kind of place is visited" src={f12} alt="Eight small line charts, one per place type, showing the share of that type's check-ins in each hour of the day. Transit has peaks at 8 and 18. Food has peaks at 12 and 19. Shopping climbs to a peak at 18. Work has a plateau from 8 to 18. Nightlife has one peak at 19. Home is highest in the evening and around midnight.">
+For each place type, how its check-ins spread over the 24 hours of the day. Transit peaks at 08:00 and 18:00 while Nightlife has a single peak around 19:00, so the hour of a visit already says something about the kind of place.
+</Figure>
+
+<Figure n={14} title="Place types on weekdays and weekends" src={f13} alt="Two stacked horizontal bars of check-in shares by place type. Weekday: Transit 47 percent, Food 18, Shopping 14, Work 8, Outdoors 6. Weekend: Transit 40 percent, Food 19, Shopping 18, Outdoors 8, Culture 6.">
+The mix of place types on weekdays and at weekends. Transit falls from 47% to 40% at the weekend and Shopping/Services grows from 14% to 18%.
+</Figure>
+
+<Figure n={15} title="Check-ins per 500 m cell" src={f14} small alt="Map of an 80 by 80 grid coloured by check-ins per cell on a logarithmic scale. The occupied cells form a filled circle with a dense centre.">
+Check-ins per cell on the local grid of 500 m cells, on a logarithmic colour scale. The occupied cells form a circle, because check-ins were collected within a fixed radius of a centre.
+</Figure>
+
+<Figure n={16} title="How active each user is" src={f15} small alt="Scatter chart with one dot per user. Horizontal axis: days with at least one check-in, from about 10 to 220. Vertical axis: number of check-ins on a logarithmic scale from 100 to about 3,000. The cloud rises from lower left to upper right.">
+One dot per user: days with at least one check-in against the total number of check-ins, on a logarithmic scale. Every user has at least 100 check-ins, and active days range from about 10 to about 220.
+</Figure>
+
+## Code
+
+All code is Python 3.11 with pandas, NumPy, PyArrow and Matplotlib. It ran on the Alpine cluster at the University of Colorado Boulder.
+
+- [`notebooks/01_first_look.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/notebooks/01_first_look.ipynb): first look at both datasets, the checks, the first version of the cleaning, and the figures and table images on this page.
+- [`notebooks/02_review_and_fix.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/notebooks/02_review_and_fix.ipynb): the day-type review, the corrected cleaning, and Figures 1 to 3.
+- [`code/prep.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/code/prep.py): the preparation script. It checks the raw files against their MD5 checksums and rebuilds every cleaned table. The [commit history of this file](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/commits/main/code/prep.py) shows the first version and the fix.
+- [`code/foursquare_category_groups.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/code/foursquare_category_groups.csv): the reviewed mapping from 247 Foursquare category names to eight place types.

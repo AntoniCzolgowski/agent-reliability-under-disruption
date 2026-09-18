@@ -1,8 +1,28 @@
 ---
 title: "About Me"
-description: "About Antoni Czolgowski, the author of this project."
+description: "Antoni Czolgowski, master's student in data science at CU Boulder, on how he got to agents and why this project."
 ---
 
-<p class="todo">[DRAFT PENDING: About Me draft, photo and links, prepared with Antoni]</p>
+import { Image } from "astro:assets";
+import photo from "../../assets/about/antoni.jpg";
+
+<Image class="about-photo" src={photo} alt="Antoni Czolgowski, smiling, in glasses, a light blue shirt and a black sweater, with mountains behind him" width={440} widths={[440, 880]} sizes="(max-width: 40rem) 60vw, 13.75rem" loading="eager" />
+
+I am Antoni Czolgowski. I am doing a master's in data science at the University of Colorado Boulder, after a bachelor's in quantitative economics at SGH Warsaw, and this site is my project for CSCI 5612.
+
+My route to agents ran through language models. I started working with them at Orange Poland right after GPT-3.5 came out, and I remember how frustrating it was to get confidently wrong answers in Polish. That question, where models go wrong and for whom, turned into research comparing model answers with survey data from real people, most recently [a paper with Abel Iyasele](https://arxiv.org/abs/2609.04485) on three open-weight models and 63 demographic personas.
+
+Somewhere along the way I stopped being satisfied with what a model says and started caring about what an agent does. An agent that stands in for a real person should be built from records of what that person did and judged on days it has not seen. This project is my first go at that, with movement data that contains an emergency, which is the hardest test I could find. For a PhD I want to build simulations where the consequences of an agent's actions become part of its next decision, in cities, organizations and public policy.
+
+When I am not looking at 29 million rows, I run (a marathon in Krakow, a 50 km trail race in Colorado), reread Steve Jobs more often than I should, and build small 3D things like a football play simulator for Folsom Field.
+
+## Contact
+
+- Email: [antoni.czolgowski@colorado.edu](mailto:antoni.czolgowski@colorado.edu)
+- Website: [antoniczolgowski.com](https://antoniczolgowski.com/)
+- GitHub: [AntoniCzolgowski](https://github.com/AntoniCzolgowski)
+- LinkedIn: [antoni-czolgowski](https://www.linkedin.com/in/antoni-czolgowski/)
+- Google Scholar: [profile](https://scholar.google.com/citations?user=f69-v_AAAAAJ)
+- Strava: [athletes/166630004](https://www.strava.com/athletes/166630004)
 
 {/* AI-use note slot: written with Antoni before submission */}
