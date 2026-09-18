@@ -5,18 +5,20 @@ import { Image } from "astro:assets";
 import { url } from "../site";
 import still from "../assets/hero-still.png";
 
-const alt =
-  "A landscape of 200 ridgelines, one for each row of a 200 by 200 grid of 500 m cells. The height of each ridge shows how many people are observed in each cell at the time on the clock, on an ordinary workday in blue or an emergency workday in red. The city is flat at night and rises in the morning.";
+// Screen-reader label for the canvas; the poster is decorative so no text ever shows in its place.
+const label = "Interactive landscape of the city's 200 by 200 grid: the height of each ridge is how many people are observed in that cell at the time on the clock, on an ordinary or an emergency workday.";
 ---
 
 <figure class="hero" id="hero" data-data-url={url("data/")}>
   <div class="hero-stage">
-    <Image class="hero-still" src={still} alt={alt} widths={[800, 1400, still.width]} sizes="(max-width: 78rem) 100vw, 78rem" loading="eager" fetchpriority="high" />
-    <canvas class="hero-canvas" role="img" aria-label={alt}></canvas>
-    <div class="hero-clock" aria-hidden="true"><span id="hero-clock">04:00</span></div>
-    <div class="hero-toggle" role="group" aria-label="Kind of day">
-      <button type="button" data-cond="ordinary" aria-pressed="true">Ordinary</button>
-      <button type="button" data-cond="emergency" aria-pressed="false">Emergency</button>
+    <Image class="hero-still" src={still} alt="" widths={[800, 1400, still.width]} sizes="100vw" loading="eager" fetchpriority="high" />
+    <canvas class="hero-canvas" role="img" aria-label={label}></canvas>
+    <div class="hero-ui frame">
+      <div class="hero-clock" aria-hidden="true"><span id="hero-clock">4:00 AM</span></div>
+      <div class="hero-toggle" role="group" aria-label="Kind of day">
+        <button type="button" data-cond="ordinary" aria-pressed="true">Ordinary</button>
+        <button type="button" data-cond="emergency" aria-pressed="false">Emergency</button>
+      </div>
     </div>
     <button class="hero-tap" type="button" hidden>Tap to explore</button>
     <p class="hero-fallback" hidden>The interactive figure needs WebGL. The image shows 08:00 on an ordinary workday.</p>
@@ -58,8 +60,8 @@ const alt =
     playBtn.setAttribute("aria-label", p ? "Pause" : "Play");
   }
   function onTime(slot: number) {
-    const minutes = Math.floor(slot * 30);
-    clock.textContent = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    const minutes = Math.floor(slot * 30), h = Math.floor(minutes / 60);
+    clock.textContent = `${((h + 11) % 12) + 1}:${String(minutes % 60).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
     if (!scrubbing) scrub.value = String(minutes);
   }
 
@@ -129,9 +131,15 @@ const alt =
 </script>
 
 <style>
+  /* full-bleed: the figure runs from one edge of the window to the other, the bar stays in the text frame */
   .hero { margin: 0 0 2.5rem; max-width: none; }
-  .hero-stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--ground); }
-  @media (max-width: 47.99rem) { .hero-stage { aspect-ratio: 4 / 3; } }
+  .hero-stage {
+    position: relative; width: calc(100vw - var(--sbw, 0px)); margin-left: calc(50% - 50vw + var(--sbw, 0px) / 2);
+    height: clamp(24rem, 82vh, 58rem); overflow: hidden; background: var(--ground);
+  }
+  /* clock and toggle sit on the text frame's gutters, not on the window edge */
+  .hero-ui { position: absolute; inset: 0; pointer-events: none; }
+  @media (max-width: 47.99rem) { .hero-stage { height: clamp(18rem, 64vh, 34rem); } }
   .hero-still, .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   .hero-still { object-fit: cover; object-position: center; transition: opacity 400ms ease; }
   .hero-canvas { display: block; opacity: 0; transition: opacity 400ms ease; touch-action: pan-y; cursor: grab; }
@@ -141,10 +149,10 @@ const alt =
   .hero-canvas.is-dragging { cursor: grabbing; }
 
   .hero-clock {
-    position: absolute; left: clamp(0.8rem, 2.5vw, 1.6rem); top: clamp(0.6rem, 2vw, 1.2rem);
+    position: absolute; left: var(--gutter); top: clamp(0.8rem, 2.4vw, 1.6rem);
     font: 400 clamp(1.4rem, 3.2vw, 2.2rem)/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); pointer-events: none;
   }
-  .hero-toggle { position: absolute; right: clamp(0.8rem, 2.5vw, 1.6rem); top: clamp(0.6rem, 2vw, 1.2rem); display: flex; border: 1px solid var(--ink); }
+  .hero-toggle { position: absolute; right: var(--gutter); top: clamp(0.8rem, 2.4vw, 1.6rem); display: flex; border: 1px solid var(--ink); pointer-events: auto; }
   .hero-toggle button {
     font: 500 0.85rem/1 var(--sans); padding: 0.55rem 0.8rem; background: var(--ground); color: var(--ink);
     border: 0; cursor: pointer;

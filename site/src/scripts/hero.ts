@@ -38,8 +38,11 @@ const HEIGHT = 30;                 // world units for pixel value 255 (grid is 2
 const SLOTS_PER_SECOND = 2;        // one day in 24 s
 const MORPH_MS = 800;
 const GHOST_OPACITY = 0.15;
-const AZIMUTH_LIMIT = Math.PI / 3;                 // plus or minus 60 degrees
-const POLAR_MIN = (35 * Math.PI) / 180, POLAR_MAX = (75 * Math.PI) / 180;
+// any azimuth; polar angle from straight above (8 degrees) down to just above the plane (82 degrees), never from below
+const POLAR_MIN = (8 * Math.PI) / 180, POLAR_MAX = (82 * Math.PI) / 180, POLAR_DEFAULT = (58 * Math.PI) / 180;
+const IDLE_SPEED = 0.011;          // rad/s, continuous slow turn until the first drag
+const INTRO_MS = 4600;             // entry move: from far away and behind, half a turn into the default view
+
 
 async function loadAtlas(dataUrl: string): Promise<{ header: HeroHeader; ord: Uint8Array[]; emg: Uint8Array[] }> {
   const header: HeroHeader = await (await fetch(`${dataUrl}hero.json`)).json();
@@ -71,13 +74,14 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
   const scene = new Scene();
-  const camera = new PerspectiveCamera(30, 1, 1, 2000);
+  const camera = new PerspectiveCamera(34, 1, 1, 2000);
 
   // heights for the current frame, mixed between conditions during the morph
   const heights = new Float32Array(N);
   const ghost = new Float32Array(N);
   let slot = opts.startSlot, playing = false, emergency = false, mix = 0, mixTarget = 0;
-  let azimuth = 0, polar = (58 * Math.PI) / 180, azVel = 0, polVel = 0, dragged = false;
+  let azimuth = 0, polar = POLAR_DEFAULT, azVel = 0, polVel = 0, dragged = false, distScale = 1;
+  let introStart = -1;
   let needRender = true, raf = 0, lastTs = 0, disposed = false, lost = false;
 
   function computeHeights() {
@@ -215,10 +219,10 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
     const aspect = camera.aspect;
     // distance so that the 200-unit grid fits the width with a small margin
     const fovH = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * aspect);
-    const dist = Math.max(255, (G * 0.62) / Math.tan(fovH / 2)) * (aspect < 1 ? 1.25 : 1);
+    const dist = Math.max(200, (G * 0.57) / Math.tan(fovH / 2)) * (aspect < 1 ? 1.2 : 1) * distScale;
     const sp = Math.sin(polar), cp = Math.cos(polar);
     camera.position.set(dist * sp * Math.sin(azimuth), dist * cp, dist * sp * Math.cos(azimuth));
-    camera.lookAt(0, HEIGHT * 0.22, 0);
+    camera.lookAt(0, HEIGHT * 0.3, 0);
   }
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -233,8 +237,10 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
 
   // ---- interaction: drag to rotate with damping, no wheel, no scroll hijack --------------------
   let pointerId = -1, lastX = 0, lastY = 0;
+  function endIntro() { if (introStart >= 0) { introStart = -1; distScale = 1; placeCamera(); } }
   function onDown(e: PointerEvent) {
     if (e.button !== 0 && e.pointerType === "mouse") return;
+    endIntro();
     pointerId = e.pointerId; lastX = e.clientX; lastY = e.clientY; azVel = 0; polVel = 0; dragged = true;
     canvas.setPointerCapture(e.pointerId); canvas.classList.add("is-dragging");
   }
@@ -242,7 +248,7 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
     if (e.pointerId !== pointerId) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
     azVel = -dx * 0.004; polVel = -dy * 0.003;
-    azimuth = clamp(azimuth + azVel, -AZIMUTH_LIMIT, AZIMUTH_LIMIT); polar = clamp(polar + polVel, POLAR_MIN, POLAR_MAX);
+    azimuth += azVel; polar = clamp(polar + polVel, POLAR_MIN, POLAR_MAX);
     placeCamera(); needRender = true;
   }
   function onUp(e: PointerEvent) {
@@ -265,12 +271,18 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
       const step = dt * (1000 / MORPH_MS);
       mix = mixTarget > mix ? Math.min(mixTarget, mix + step) : Math.max(mixTarget, mix - step); moving = true;
     }
-    if (pointerId < 0 && (Math.abs(azVel) > 1e-4 || Math.abs(polVel) > 1e-4)) {
+    if (introStart >= 0) {
+      // entry move: ease from far away, behind and steeper, through half a turn into the default view
+      const u = clamp((ts - introStart) / INTRO_MS, 0, 1), e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      azimuth = -Math.PI + Math.PI * e; distScale = 2.6 - 1.6 * e; polar = POLAR_DEFAULT - 0.22 * (1 - e);
+      placeCamera(); moving = true;
+      if (u >= 1) { introStart = -1; distScale = 1; }
+    } else if (pointerId < 0 && (Math.abs(azVel) > 1e-4 || Math.abs(polVel) > 1e-4)) {
       azVel *= 0.92; polVel *= 0.92;
-      azimuth = clamp(azimuth + azVel, -AZIMUTH_LIMIT, AZIMUTH_LIMIT); polar = clamp(polar + polVel, POLAR_MIN, POLAR_MAX);
+      azimuth += azVel; polar = clamp(polar + polVel, POLAR_MIN, POLAR_MAX);
       placeCamera(); moving = true;
     } else if (opts.idleRotation && !dragged && pointerId < 0) {
-      azimuth = Math.sin(ts / 22000) * 0.12; placeCamera(); moving = true;
+      azimuth += IDLE_SPEED * dt; placeCamera(); moving = true;
     }
     if (moving || needRender) {
       computeHeights();
@@ -283,6 +295,7 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
   function play() { if (lost) return; playing = true; kick(); }
   function pause() { playing = false; lastTs = 0; }
 
+  if (opts.idleRotation) { introStart = performance.now(); azimuth = -Math.PI; distScale = 2.6; polar = POLAR_DEFAULT - 0.22; }
   resize(); computeHeights();
   if (ridges) updateRidges(ridges); else if (columns) updateColumns(columns);
   renderer.render(scene, camera);
@@ -295,14 +308,14 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
     slot: () => slot,
     setCondition(e: boolean) { emergency = e; mixTarget = e ? 1 : 0; kick(); },
     still(s: number) {
-      const keep = { slot, azimuth, polar, mix };
+      const keep = { slot, azimuth, polar, mix, distScale };
       const pr = renderer.getPixelRatio(); renderer.setPixelRatio(2); resize();
-      slot = s; azimuth = 0; polar = (58 * Math.PI) / 180; mix = mixTarget; placeCamera(); computeHeights();
+      slot = s; azimuth = 0; polar = POLAR_DEFAULT; mix = mixTarget; distScale = 1; placeCamera(); computeHeights();
       if (ridges) updateRidges(ridges); else if (columns) updateColumns(columns);
       renderer.render(scene, camera);
       const data = canvas.toDataURL("image/png");
       renderer.setPixelRatio(pr); resize();
-      slot = keep.slot; azimuth = keep.azimuth; polar = keep.polar; mix = keep.mix; placeCamera(); needRender = true; kick();
+      slot = keep.slot; azimuth = keep.azimuth; polar = keep.polar; mix = keep.mix; distScale = keep.distScale; placeCamera(); needRender = true; kick();
       return data;
     },
     dispose() {

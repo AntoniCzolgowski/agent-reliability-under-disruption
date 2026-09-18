@@ -55,7 +55,12 @@ const shareImage = new URL(url("share.png"), Astro.site).href;
     <meta name="twitter:title" content={title ?? SITE_TITLE} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={shareImage} />
-    <script is:inline>document.documentElement.classList.add("js");</script>
+    <script is:inline>
+      document.documentElement.classList.add("js");
+      // scrollbar width, so a full-bleed block can span the window without sideways scroll
+      var sbw = function () { document.documentElement.style.setProperty("--sbw", window.innerWidth - document.documentElement.clientWidth + "px"); };
+      sbw(); addEventListener("resize", sbw);
+    </script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

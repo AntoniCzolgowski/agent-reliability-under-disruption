@@ -1,19 +1,15 @@
 ---
 import Base from "../layouts/Base.astro";
 import Hero from "../components/Hero.astro";
-import { SITE_TITLE, url } from "../site";
+import { url } from "../site";
 
 const description =
   "A course and research project on simulated stand-ins for real people, and how well they hold up when an emergency interrupts daily life.";
 ---
 
 <Base description={description} current="home">
-  <h1>{SITE_TITLE}</h1>
   <Hero />
   <p class="todo">[COPY: Home line, Antoni, one sentence]</p>
   <p class="note">Start with the <a href={url("introduction/")}>Introduction</a>.</p>
 </Base>
 
-<style>
-  h1 { margin-bottom: 1.4rem; }
-</style>
