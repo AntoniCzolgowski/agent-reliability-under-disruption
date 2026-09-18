@@ -23,6 +23,8 @@ export interface HeroOptions {
   onTime: (slot: number) => void;
   onReady: () => void;
   onLost: () => void;
+  sliceRow?: number;          // grid row (1-based y) handed to onSlice every rendered frame
+  onSlice?: (heights: Float32Array, ghost: Float32Array, mix: number, max: number) => void;
 }
 
 export interface HeroHandle {
@@ -285,18 +287,23 @@ export async function mountHero(canvas: HTMLCanvasElement, opts: HeroOptions): P
       azimuth += IDLE_SPEED * dt; placeCamera(); moving = true;
     }
     if (moving || needRender) {
-      computeHeights();
+      computeHeights(); slice();
       if (ridges) updateRidges(ridges); else if (columns) updateColumns(columns);
       renderer.render(scene, camera); needRender = false;
     }
     if (moving || playing) raf = requestAnimationFrame(frame); else lastTs = 0;
+  }
+  function slice() {
+    if (!opts.onSlice || !opts.sliceRow) return;
+    const a = (opts.sliceRow - 1) * G;
+    opts.onSlice(heights.subarray(a, a + G), ghost.subarray(a, a + G), mix, HEIGHT);
   }
   function kick() { if (!raf && !disposed) raf = requestAnimationFrame(frame); }
   function play() { if (lost) return; playing = true; kick(); }
   function pause() { playing = false; lastTs = 0; }
 
   if (opts.idleRotation) { introStart = performance.now(); azimuth = -Math.PI; distScale = 2.6; polar = POLAR_DEFAULT - 0.22; }
-  resize(); computeHeights();
+  resize(); computeHeights(); slice();
   if (ridges) updateRidges(ridges); else if (columns) updateColumns(columns);
   renderer.render(scene, camera);
   opts.onReady(); opts.onTime(slot);

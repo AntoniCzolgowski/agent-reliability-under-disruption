@@ -32,6 +32,14 @@ const label = "Interactive landscape of the city's 200 by 200 grid: the height o
       <input class="hero-scrub" type="range" min="0" max="1439" step="1" value="240" disabled />
     </label>
   </div>
+  <div class="hero-slice" aria-hidden="true" hidden>
+    <svg viewBox="0 0 1000 220" preserveAspectRatio="none">
+      <path class="slice-ghost" d="" />
+      <path class="slice-fill" d="" />
+      <path class="slice-line" d="" />
+    </svg>
+    <p class="slice-note frame"><span>one row of the grid</span></p>
+  </div>
 </figure>
 
 <script>
@@ -43,6 +51,10 @@ const label = "Interactive landscape of the city's 200 by 200 grid: the height o
   const tap = fig.querySelector<HTMLButtonElement>(".hero-tap")!;
   const fallback = fig.querySelector<HTMLElement>(".hero-fallback")!;
   const toggles = Array.from(fig.querySelectorAll<HTMLButtonElement>(".hero-toggle button"));
+  const sliceBox = fig.querySelector<HTMLElement>(".hero-slice")!;
+  const sliceGhost = fig.querySelector<SVGPathElement>(".slice-ghost")!;
+  const sliceFill = fig.querySelector<SVGPathElement>(".slice-fill")!;
+  const sliceLine = fig.querySelector<SVGPathElement>(".slice-line")!;
 
   const params = new URLSearchParams(location.search);
   const style = params.get("style") === "columns" ? "columns" : "ridges";
@@ -65,6 +77,25 @@ const label = "Interactive landscape of the city's 200 by 200 grid: the height o
     if (!scrubbing) scrub.value = String(minutes);
   }
 
+  // the slice under the bar: the same row of the city, cut open, moving with the clock and the toggle
+  const COBALT = [31, 79, 216], VERMILION = [232, 65, 42];
+  function slicePath(v: Float32Array, max: number, close: boolean) {
+    const n = v.length, W = 1000, H = 220, top = 12;
+    let d = "";
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * W, y = H - ((v[i] / max) * (H - top));
+      d += (i ? " L " : "M ") + x.toFixed(1) + " " + y.toFixed(1);
+    }
+    return close ? d + ` L ${W} ${H} L 0 ${H} Z` : d;
+  }
+  function onSlice(h: Float32Array, g: Float32Array, mix: number, max: number) {
+    const c = COBALT.map((a, i) => Math.round(a + (VERMILION[i] - a) * mix));
+    const col = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+    sliceLine.setAttribute("d", slicePath(h, max, false)); sliceLine.style.stroke = col;
+    sliceFill.setAttribute("d", slicePath(h, max, true)); sliceFill.style.fill = col;
+    sliceGhost.setAttribute("d", slicePath(g, max, false)); sliceGhost.style.opacity = String(0.35 * mix);
+  }
+
   async function start() {
     if (hero || !webgl) return;
     fig.classList.add("is-loading");
@@ -76,8 +107,10 @@ const label = "Interactive landscape of the city's 200 by 200 grid: the height o
         fig.classList.remove("is-loading", "is-still"); fig.classList.add("is-live");
         playBtn.disabled = false; scrub.disabled = false; setPlaying(!reduced);
       },
-      onLost() { showStill(); playBtn.disabled = true; },
+      onLost() { showStill(); playBtn.disabled = true; sliceBox.hidden = true; },
+      sliceRow: 82, onSlice,
     });
+    sliceBox.hidden = false;
     if (params.has("debug")) (window as any).__hero = hero;
   }
 
@@ -169,6 +202,16 @@ const label = "Interactive landscape of the city's 200 by 200 grid: the height o
   .hero-fallback { position: absolute; left: 1rem; bottom: 0.6rem; margin: 0; font: 400 0.85rem/1.4 var(--sans); color: var(--muted); }
 
   .hero-bar { display: flex; align-items: center; gap: 1rem; padding-top: 0.7rem; }
+
+  /* the slice: full-bleed, quiet, bottom-aligned skyline of one row */
+  .hero-slice { position: relative; width: calc(100vw - var(--sbw, 0px)); margin: 3.5rem 0 0 calc(50% - 50vw + var(--sbw, 0px) / 2); }
+  .hero-slice svg { display: block; width: 100%; height: clamp(9rem, 26vh, 17rem); overflow: visible; }
+  .hero-slice path { vector-effect: non-scaling-stroke; }
+  .slice-line { fill: none; stroke: var(--cobalt); stroke-width: 1.4; stroke-linejoin: round; opacity: 0.55; }
+  .slice-fill { stroke: none; fill: var(--cobalt); opacity: 0.06; }
+  .slice-ghost { fill: none; stroke: var(--cobalt); stroke-width: 1.2; stroke-linejoin: round; opacity: 0; }
+  .slice-note { margin: 0.5rem auto 0; font: 400 0.8rem/1.2 var(--mono); color: var(--muted); }
+  .hero.is-touch .hero-slice, .hero.is-live .hero-slice { display: block; }
   .hero-play {
     display: grid; place-items: center; width: 1.9rem; height: 1.9rem; padding: 0; background: none; color: var(--ink);
     border: 1px solid var(--ink); cursor: pointer;
