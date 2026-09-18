@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
 import { SITE_TITLE, url } from "../site";
 
 const description =
@@ -8,20 +9,11 @@ const description =
 
 <Base description={description} current="home">
   <h1>{SITE_TITLE}</h1>
+  <Hero />
   <p class="todo">[COPY: Home line, Antoni, one sentence]</p>
-  <div class="wide hero-slot" role="img" aria-label="Placeholder for the interactive figure that is built after the ten tabs">
-    <p class="todo">[HERO: the interactive figure is built after the ten tabs]</p>
-  </div>
   <p class="note">Start with the <a href={url("introduction/")}>Introduction</a>.</p>
 </Base>
 
 <style>
-  .hero-slot {
-    aspect-ratio: 16 / 9;
-    border: 1px solid var(--rule);
-    display: grid;
-    place-items: center;
-    margin: 2rem 0;
-  }
-  .hero-slot p { margin: 0; }
+  h1 { margin-bottom: 1.4rem; }
 </style>

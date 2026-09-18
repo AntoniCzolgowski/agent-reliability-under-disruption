@@ -1,4 +1,4 @@
-# data never enters the repo; only site/public/data/hero.png and hero.json are committed
+# data never enters the repo; only site/public/data/hero.webp and hero.json are committed
 data/raw/
 data/processed/
 *.csv.gz

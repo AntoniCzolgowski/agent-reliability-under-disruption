@@ -1,0 +1,180 @@
+---
+// The interactive figure on Home. The still paints first; three.js loads only when the figure is in view
+// (or after a tap on phones), and the still stays under reduced motion or without WebGL.
+import { Image } from "astro:assets";
+import { url } from "../site";
+import still from "../assets/hero-still.png";
+
+const alt =
+  "A landscape of 200 ridgelines, one for each row of a 200 by 200 grid of 500 m cells. The height of each ridge shows how many people are observed in each cell at the time on the clock, on an ordinary workday in blue or an emergency workday in red. The city is flat at night and rises in the morning.";
+---
+
+<figure class="hero" id="hero" data-data-url={url("data/")}>
+  <div class="hero-stage">
+    <Image class="hero-still" src={still} alt={alt} widths={[800, 1400, still.width]} sizes="(max-width: 78rem) 100vw, 78rem" loading="eager" fetchpriority="high" />
+    <canvas class="hero-canvas" role="img" aria-label={alt}></canvas>
+    <div class="hero-clock" aria-hidden="true"><span id="hero-clock">04:00</span></div>
+    <div class="hero-toggle" role="group" aria-label="Kind of day">
+      <button type="button" data-cond="ordinary" aria-pressed="true">Ordinary</button>
+      <button type="button" data-cond="emergency" aria-pressed="false">Emergency</button>
+    </div>
+    <button class="hero-tap" type="button" hidden>Tap to explore</button>
+    <p class="hero-fallback" hidden>The interactive figure needs WebGL. The image shows 08:00 on an ordinary workday.</p>
+  </div>
+  <div class="hero-bar">
+    <button class="hero-play" type="button" aria-label="Pause" disabled>
+      <svg class="ic-pause" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1" width="3" height="10" /><rect x="7.5" y="1" width="3" height="10" /></svg>
+      <svg class="ic-play" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" /></svg>
+    </button>
+    <label class="hero-scrub-label"><span class="visually-hidden">Time of day</span>
+      <input class="hero-scrub" type="range" min="0" max="1439" step="1" value="240" disabled />
+    </label>
+  </div>
+</figure>
+
+<script>
+  const fig = document.getElementById("hero") as HTMLElement;
+  const canvas = fig.querySelector<HTMLCanvasElement>(".hero-canvas")!;
+  const clock = fig.querySelector<HTMLElement>("#hero-clock")!;
+  const playBtn = fig.querySelector<HTMLButtonElement>(".hero-play")!;
+  const scrub = fig.querySelector<HTMLInputElement>(".hero-scrub")!;
+  const tap = fig.querySelector<HTMLButtonElement>(".hero-tap")!;
+  const fallback = fig.querySelector<HTMLElement>(".hero-fallback")!;
+  const toggles = Array.from(fig.querySelectorAll<HTMLButtonElement>(".hero-toggle button"));
+
+  const params = new URLSearchParams(location.search);
+  const style = params.get("style") === "columns" ? "columns" : "ridges";
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const coarse = matchMedia("(pointer: coarse)").matches;
+  const test = document.createElement("canvas");
+  const webgl = !!(test.getContext("webgl2") || test.getContext("webgl"));
+
+  let hero: import("../scripts/hero").HeroHandle | null = null;
+  let scrubbing = false;
+
+  function showStill() { fig.classList.remove("is-live"); fig.classList.add("is-still"); }
+  function setPlaying(p: boolean) {
+    playBtn.classList.toggle("is-playing", p);
+    playBtn.setAttribute("aria-label", p ? "Pause" : "Play");
+  }
+  function onTime(slot: number) {
+    const minutes = Math.floor(slot * 30);
+    clock.textContent = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    if (!scrubbing) scrub.value = String(minutes);
+  }
+
+  async function start() {
+    if (hero || !webgl) return;
+    fig.classList.add("is-loading");
+    const mod = await import("../scripts/hero");
+    hero = await mod.mountHero(canvas, {
+      style, dataUrl: fig.dataset.dataUrl!, autoplay: !reduced, idleRotation: !reduced, startSlot: 8,
+      onTime,
+      onReady() {
+        fig.classList.remove("is-loading", "is-still"); fig.classList.add("is-live");
+        playBtn.disabled = false; scrub.disabled = false; setPlaying(!reduced);
+      },
+      onLost() { showStill(); playBtn.disabled = true; },
+    });
+    if (params.has("debug")) (window as any).__hero = hero;
+  }
+
+  if (!webgl) {
+    showStill(); fallback.hidden = false;
+  } else if (coarse) {
+    showStill(); tap.hidden = false;
+    tap.addEventListener("click", () => { tap.hidden = true; fig.classList.add("is-touch"); start(); }, { once: true });
+  } else {
+    fig.classList.add("is-still");
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { io.disconnect(); start(); }
+    }, { rootMargin: "200px" });
+    io.observe(fig);
+  }
+
+  playBtn.addEventListener("click", () => {
+    if (!hero) return;
+    if (hero.playing()) hero.pause(); else hero.play();
+    setPlaying(hero.playing());
+  });
+  fig.addEventListener("keydown", (e) => {
+    if (e.code !== "Space" || !hero) return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === "INPUT" || (t.tagName === "BUTTON" && t !== playBtn)) return;
+    e.preventDefault(); playBtn.click();
+  });
+  scrub.addEventListener("pointerdown", () => { scrubbing = true; });
+  scrub.addEventListener("input", () => { hero?.seek(Number(scrub.value) / 30); });
+  scrub.addEventListener("change", () => { scrubbing = false; hero?.seek(Number(scrub.value) / 30); });
+  toggles.forEach((b) => b.addEventListener("click", () => {
+    toggles.forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+    hero?.setCondition(b.dataset.cond === "emergency");
+  }));
+
+  // pause when the tab is hidden or the figure leaves the screen
+  let wasPlaying = false;
+  const vis = new IntersectionObserver((entries) => {
+    if (!hero) return;
+    const on = entries.some((e) => e.isIntersecting);
+    if (!on && hero.playing()) { wasPlaying = true; hero.pause(); }
+    else if (on && wasPlaying) { wasPlaying = false; hero.play(); }
+  });
+  vis.observe(fig);
+  document.addEventListener("visibilitychange", () => {
+    if (!hero) return;
+    if (document.hidden && hero.playing()) { wasPlaying = true; hero.pause(); }
+    else if (!document.hidden && wasPlaying) { wasPlaying = false; hero.play(); }
+  });
+  window.addEventListener("pagehide", () => hero?.dispose());
+</script>
+
+<style>
+  .hero { margin: 0 0 2.5rem; max-width: none; }
+  .hero-stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--ground); }
+  @media (max-width: 47.99rem) { .hero-stage { aspect-ratio: 4 / 3; } }
+  .hero-still, .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-still { object-fit: cover; object-position: center; transition: opacity 400ms ease; }
+  .hero-canvas { display: block; opacity: 0; transition: opacity 400ms ease; touch-action: pan-y; cursor: grab; }
+  .hero.is-live .hero-canvas { opacity: 1; }
+  .hero.is-live .hero-still { opacity: 0; pointer-events: none; }
+  .hero.is-touch .hero-canvas { touch-action: none; }
+  .hero-canvas.is-dragging { cursor: grabbing; }
+
+  .hero-clock {
+    position: absolute; left: clamp(0.8rem, 2.5vw, 1.6rem); top: clamp(0.6rem, 2vw, 1.2rem);
+    font: 400 clamp(1.4rem, 3.2vw, 2.2rem)/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); pointer-events: none;
+  }
+  .hero-toggle { position: absolute; right: clamp(0.8rem, 2.5vw, 1.6rem); top: clamp(0.6rem, 2vw, 1.2rem); display: flex; border: 1px solid var(--ink); }
+  .hero-toggle button {
+    font: 500 0.85rem/1 var(--sans); padding: 0.55rem 0.8rem; background: var(--ground); color: var(--ink);
+    border: 0; cursor: pointer;
+  }
+  .hero-toggle button + button { border-left: 1px solid var(--ink); }
+  .hero-toggle button[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+  .hero-toggle button:focus-visible { outline-offset: -3px; outline-color: var(--ground); }
+  .hero-toggle button[aria-pressed="false"]:focus-visible { outline-color: var(--cobalt); }
+
+  .hero-tap {
+    position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
+    font: 500 0.95rem/1 var(--sans); padding: 0.8rem 1.2rem; background: var(--ink); color: var(--ground); border: 0; cursor: pointer;
+  }
+  .hero-fallback { position: absolute; left: 1rem; bottom: 0.6rem; margin: 0; font: 400 0.85rem/1.4 var(--sans); color: var(--muted); }
+
+  .hero-bar { display: flex; align-items: center; gap: 1rem; padding-top: 0.7rem; }
+  .hero-play {
+    display: grid; place-items: center; width: 1.9rem; height: 1.9rem; padding: 0; background: none; color: var(--ink);
+    border: 1px solid var(--ink); cursor: pointer;
+  }
+  .hero-play svg { fill: currentColor; display: none; }
+  .hero-play.is-playing .ic-pause, .hero-play:not(.is-playing) .ic-play { display: block; }
+  .hero-play:disabled { color: var(--muted); border-color: var(--rule); cursor: default; }
+  .hero-scrub-label { flex: 1; display: flex; }
+  .hero-scrub { flex: 1; -webkit-appearance: none; appearance: none; height: 1.4rem; background: none; margin: 0; cursor: pointer; }
+  .hero-scrub:disabled { cursor: default; }
+  .hero-scrub::-webkit-slider-runnable-track { height: 1px; background: var(--rule); }
+  .hero-scrub::-moz-range-track { height: 1px; background: var(--rule); }
+  .hero-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 2px; height: 14px; margin-top: -6.5px; background: var(--ink); border-radius: 0; }
+  .hero-scrub::-moz-range-thumb { width: 2px; height: 14px; background: var(--ink); border: 0; border-radius: 0; }
+  .hero-scrub:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 4px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
