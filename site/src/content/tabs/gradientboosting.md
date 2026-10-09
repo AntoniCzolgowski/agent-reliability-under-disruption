@@ -1,6 +1,6 @@
 ---
-title: "NN"
-description: "NN tab of the course project Agent reliability under disruption."
+title: "GradientBoosting"
+description: "GradientBoosting tab of the course project Agent reliability under disruption."
 ---
 
 <p class="stub-line">This tab is filled in a later part of the project.</p>

@@ -1,4 +1,4 @@
-// Shared site constants. Tab names are fixed by the assignment and must not change.
+// Shared site constants. Tab names are fixed by the assignment and must not change (list revised 9 Oct 2026: SVMs and NN replaced by AdaBoost, GradientBoosting, XGBoost).
 export const SITE_TITLE = "Agent reliability under disruption";
 export const AUTHOR = "Antoni Czolgowski";
 export const REPO_URL = "https://github.com/AntoniCzolgowski/agent-reliability-under-disruption";
@@ -10,9 +10,10 @@ export const COURSE_TABS = [
   { label: "PCA", slug: "pca" },
   { label: "NaiveBayes", slug: "naivebayes" },
   { label: "DecTrees", slug: "dectrees" },
-  { label: "SVMs", slug: "svms" },
   { label: "Regression", slug: "regression" },
-  { label: "NN", slug: "nn" },
+  { label: "AdaBoost", slug: "adaboost" },
+  { label: "GradientBoosting", slug: "gradientboosting" },
+  { label: "XGBoost", slug: "xgboost" },
   { label: "Conclusions", slug: "conclusions" },
 ];
 
