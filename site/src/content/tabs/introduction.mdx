@@ -4,6 +4,7 @@ description: "What happens to simulated stand-ins for real people when an emerge
 ---
 
 import SeventyFiveDays from "../../components/SeventyFiveDays.astro";
+import NoonCrowd from "../../components/NoonCrowd.astro";
 
 A familiar route can become useless overnight. The train stops running, a workplace closes, or an emergency changes where it is safe to go. Someone who has followed the same routine for years suddenly has to make different decisions. They may still have the same responsibilities, but circumstances differ. Other people are adjusting at the same time, often with incomplete information about what is happening. Their choices effect which roads become crowded and where help is needed. A decision that seems sensible in the morning may no longer work by the afternoon. Understanding this process means looking beyond where people usually go. It means asking how they respond when familiar expectations stop being useful. That question is at the centre of understanding human behaviour under disruption.
 
@@ -28,6 +29,10 @@ The motivation for this project is to understand when knowledge of ordinary beha
 <SeventyFiveDays n={1} title="Seventy-five days in one city">
 Each line is one day, from midnight to midnight, and it rises with the number of people who were recorded at that hour. The first sixty days are blue and the last fifteen, the days of the emergency, are red; every seventh pair of lines is a quieter weekend.
 </SeventyFiveDays>
+
+<NoonCrowd n={2} title="The missing noon crowd">
+Each grey circle is a 3 km square where regular commuters work, sized by how many of them are there at noon on an ordinary workday, and the red circle inside it is the part of that crowd that did not come on workdays during the emergency. About 2,430 of these commuters are at their usual workplace at noon on an ordinary workday and about 2,000 during the emergency, with the largest gaps in the busy centre, even though the same people were recorded at noon slightly more often than usual.
+</NoonCrowd>
 
 ## Questions
 

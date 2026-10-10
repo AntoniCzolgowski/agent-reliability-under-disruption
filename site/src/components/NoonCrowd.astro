@@ -1,0 +1,44 @@
+---
+// The missing noon crowd: regular commuters at their usual workplace at midday, ordinary workdays against emergency workdays,
+// one circle per 3 km square. Circle area is proportional to people, grey = the usual crowd, red = the part of it missing in the
+// emergency, blue = more than usual. Data: src/data/noon_crowd.json, written by code/export_noon_crowd.py.
+import data from "../data/noon_crowd.json";
+
+interface Props { n?: number | string; title?: string; }
+const { n = 2, title = "The missing noon crowd" } = Astro.props;
+
+const sq = data.squares as { x: number; y: number; usual: number; emergency: number }[];
+const W = 1600, side = 1300, left = (W - side) / 2, top = 20, H = top + side + 120;
+const step = side / 33;
+const cx = (x: number) => left + (x + 0.5) * step;
+const cy = (y: number) => top + side - (y + 0.5) * step;
+const k = 6.3;                                   // radius = k * sqrt(people), so area follows the number of people
+const r = (v: number) => k * Math.sqrt(Math.max(v, 0));
+const mono = 'font:400 24px "Chivo Mono", ui-monospace, monospace';
+const ly = top + side + 70;
+const alt = "Map of grey circles, one per 3 kilometre square where regular commuters work, sized by how many of them are there at noon on an ordinary workday. Inside almost every circle sits a red circle for the part of that crowd that was missing on emergency workdays; the largest red circles are in the dense centre. A few squares show a small blue circle instead, where more commuters than usual turned up.";
+---
+
+<figure class="noon" id={`fig-figure-${n}`}>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={alt} style="display:block;width:100%;height:auto">
+    {sq.map((s) => <circle cx={cx(s.x)} cy={cy(s.y)} r={r(s.usual)} fill="#D5D9E3" />)}
+    {sq.map((s) => s.usual > s.emergency
+      ? <circle cx={cx(s.x)} cy={cy(s.y)} r={r(s.usual - s.emergency)} fill="#E8412A" />
+      : <circle cx={cx(s.x)} cy={cy(s.y)} r={r(s.emergency - s.usual)} fill="#1F4FD8" />)}
+    <line x1={left} x2={left + side} y1={top + side + 24} y2={top + side + 24} stroke="#D9DAD6" />
+    <circle cx={left + 14} cy={ly} r="14" fill="#D5D9E3" />
+    <text style={mono} fill="#5B616B" x={left + 40} y={ly + 8}>the usual noon crowd</text>
+    <circle cx={left + 470} cy={ly} r="12" fill="#E8412A" />
+    <text style={mono} fill="#E8412A" x={left + 494} y={ly + 8}>missing in the emergency</text>
+    <circle cx={left + 1000} cy={ly} r="9" fill="#1F4FD8" />
+    <text style={mono} fill="#1F4FD8" x={left + 1020} y={ly + 8}>more than usual</text>
+  </svg>
+  <figcaption>
+    <span class="fig-no">Figure {n}</span><span class="fig-title">{title}</span>
+    <span class="fig-text"><slot /></span>
+  </figcaption>
+</figure>
+
+<style>
+  .noon { margin: 2.4rem 0 2.6rem; }
+</style>
