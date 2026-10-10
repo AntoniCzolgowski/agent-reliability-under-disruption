@@ -3,6 +3,9 @@ title: "Research"
 description: "The research study that grows out of the course project: when a simulated stand-in for a person stops being reliable, and what brings it back."
 ---
 
+import Figure from "../../components/Figure.astro";
+import f31 from "../../assets/figures/f31_place_rhythms_vs_foursquare.png";
+
 <p class="lede">I extend this course project with an independent study. First in my line of work on agents as models of how people decide and act.</p>
 
 ## The question
@@ -18,6 +21,45 @@ The course tabs build the standard ML models on this data. The research asks a a
 *Study 3, reliability (core).* Simple agents of each person's movement, from a last-cell rule to a learned mix of long-run and recent habits, trained on days 0 to 44, validated on 45 to 59 and frozen. Each agent is tested on days 67 to 74 with 0, 1, 3 or 7 days of post-change data, under equal information, so the update mechanism is a thing that differs. Context contains: movement history alone, history plus the anonymous place counts, and history plus the Study 1 semantics if its validation passes. Outcomes are next-position error, short rollouts of 3 and 7 steps, and improvement over the frozen agent, all by pre-change behaviour group. Two hypotheses: ordinary-period validation does not fully predict post-change reliability, and fresh evidence helps with diminishing returns. Both can fail.
 
 *Study 4, a learned update schedule (RL extension).* Study 3 fixes when an agent is updated. Study 4 lets an agent learn it. Under a budget of k updates, an agent sees a small state each day, yesterday's error, its trend, updates left and the weekly phase, and chooses to keep or to update. The reward is the negative prediction error, scored by replaying the recorded observations. Tabular Q-learning written from scratch in NumPy, trained on pre-emergency days only, frozen before day 60, and compared under the same budget with never updating, updating on the first k days, the most recent k days, and a threshold rule. If the threshold rule is enough, that is the finding.
+
+## Progress
+
+<p class="note">Updated October 2026, after Part 2 of the course project.</p>
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Study</th><th>Where it stands</th><th>See</th></tr></thead>
+<tbody>
+<tr><td>1. Place semantics</td><td>First step done: the daily rhythms of 11,858 anonymous cells read against named Foursquare places</td><td>Below</td></tr>
+<tr><td>2. Behaviour change</td><td>Six kinds of movers found and tested in the emergency; 74% keep their kind in an ordinary fortnight, 59% in the emergency</td><td><a href="../clustering/">Clustering</a>, <a href="../pca/">PCA</a></td></tr>
+<tr><td>3. Reliability</td><td>The groups that results will be reported by are fixed: the six kinds, frozen on days 0-44</td><td>Next</td></tr>
+<tr><td>4. Update schedule</td><td>Two candidate signals for when an agent should update itself measured on real data</td><td>Below</td></tr>
+</tbody>
+</table>
+</div>
+
+### Reading anonymous places through named ones
+
+YJMob100K counts 85 categories of places in every cell but does not say what the categories are, so a cell full of category 59 could be offices, homes or bars. Study 1 asks whether the kind of place can be read from when people are there. The first step was done this month.
+
+- **The rhythm of a cell.** For every cell with at least 500 records on days 0-59, the share of its records in each half hour, on workdays and on rest days separately. The size of the crowd is divided out, so only the timing remains.
+- **Five rhythm types.** K-means sorted the 11,858 cells into five types, named by the hour at which they are busiest on a workday: 8 am, noon, 5 pm, 6 pm and 8 pm (the Clustering tab shows them). The cells form a gradient rather than separate groups, so the types describe the range of rhythms more than they find natural kinds.
+- **A named mirror.** Foursquare check-ins from Tokyo carry the name of the place, folded into eight groups such as Transit, Food or Work and Institutions. The same rhythm was built for each group.
+- **The comparison.** Each side minus its own average rhythm, then the cosine similarity between every YJMob type and every Foursquare group. Without subtracting the average every pair looks alike (0.42 to 0.96), because all places share the basic shape of a day.
+
+<Figure n={1} title="YJMob place rhythms against Foursquare place groups" src={f31} alt="Heat map with five rows for the YJMob rhythm types, peak 08:00, 12:00, 17:00, 18:00 and 20:00, and eight columns for the Foursquare groups from Transit to Home, coloured from blue for minus 1 to red for plus 1. The strongest match in each row is in bold: Work and Institutions 0.71 for peak 08:00, Work and Institutions 0.83 for peak 12:00, Shopping and Services 0.54 for peak 17:00, Nightlife 0.88 for peak 18:00, Home 0.76 for peak 20:00.">
+How closely the daily rhythm of each YJMob type of cell follows the rhythm of each Foursquare place group, after removing each source's average day, from -1 (opposite) to 1 (same shape). The closest group in each row is in bold.
+</Figure>
+
+What came out is a consistent picture. The noon cells and the 8 am cells look like Work and Institutions (0.83 and 0.71), the 5 pm cells like Shopping and Services (0.54), the 6 pm cells like Nightlife (0.88) and the 8 pm cells like Home (0.76). The busiest-at-noon type is also the one that lost the most records in the emergency, 15% on workdays, which fits a workplace that fewer people came to.
+
+What it does not show is just as important. A rhythm says when people are in a cell, not what the cell contains, and the two sources record people differently: YJMob records a phone, Foursquare a person who chose to check in, which is why evening leisure and home look so alike here. The check-ins come from another provider and from 2012-13, and the two grids are never aligned on a map. The labels above are inferred and reported as such; they are not names the dataset contains, and no attempt is made to identify the city.
+
+Next comes the harder step of the study: estimating a rhythm for each of the 85 categories separately, by treating a cell's rhythm as a mix of the rhythms of the places it holds, and testing the method first on Foursquare with the names hidden, where the right answer is known.
+
+### Signals for an agent that updates itself
+
+Study 4 asks whether an agent can learn when to update its picture of a person. That needs a signal it could watch. The PCA tab measured two on real data: how far a person's fortnight sits from the centre of their own kind of mover, and how much of it the five frozen components cannot reconstruct. Both grow in the emergency (median 2.81 to 3.15 and 1.65 to 1.80) and grow most for regular commuters. They will be among the candidate inputs when the update agent is built in November.
 
 ## Limits
 
