@@ -17,3 +17,6 @@ __pycache__/
 
 # local-only pages for design options, never published
 site/src/pages/dev/
+
+# Course materials from Canvas and class (local reference only, not published)
+course-materials/

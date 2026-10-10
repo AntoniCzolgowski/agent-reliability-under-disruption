@@ -20,7 +20,7 @@ const id = `fig-${String(label).toLowerCase()}-${n}`;
 
 <figure class:list={[{ small }]} id={id}>
   <button class="fig-open" type="button" data-dialog={`${id}-dialog`} aria-label={`Enlarge ${label} ${n}: ${title}`}>
-    <Image src={src} alt={alt} widths={[480, 800, 1200, src.width]} sizes={small ? "(max-width: 40rem) 100vw, 38rem" : "(max-width: 64rem) 100vw, 60rem"} loading={eager ? "eager" : "lazy"} />
+    <Image src={src} alt={alt} widths={[480, 800, 1200, src.width]} sizes={small ? "(max-width: 40rem) 100vw, 38rem" : "(max-width: 64rem) 100vw, 62rem"} loading={eager ? "eager" : "lazy"} />
   </button>
   <figcaption>
     <span class="fig-no">{label} {n}</span><span class="fig-title">{title}</span>
