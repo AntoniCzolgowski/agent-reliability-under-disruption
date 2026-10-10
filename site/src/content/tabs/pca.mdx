@@ -1,0 +1,154 @@
+---
+title: "PCA"
+description: "How few traits are enough to tell one person's routine from another's, what those few axes mean, and why places do not compress the same way."
+---
+
+import Figure from "../../components/Figure.astro";
+import o04 from "../../assets/figures/o04_pca_rotation.png";
+import o05 from "../../assets/figures/o05_many_dimensions.png";
+import t07 from "../../assets/figures/t07_person_traits.png";
+import t08 from "../../assets/figures/t08_person_traits_scaled.png";
+import t09 from "../../assets/figures/t09_cell_poi_counts.png";
+import t10 from "../../assets/figures/t10_cell_poi_scaled.png";
+import f17 from "../../assets/figures/f17_pca_people_scree.png";
+import f18 from "../../assets/figures/f18_pca_people_loadings.png";
+import f19 from "../../assets/figures/f19_pca_people_biplot.png";
+import f27 from "../../assets/figures/f27_drift_signal.png";
+import f28 from "../../assets/figures/f28_pca_places_scree.png";
+import f29 from "../../assets/figures/f29_pca_places_maps.png";
+
+<p class="lede">Fifteen numbers describe how each of 24,514 people moves through an ordinary fortnight. Principal component analysis asks how many of them are really needed, and the answer turns out to be about five.</p>
+
+## Overview
+
+Principal component analysis (PCA) is a way of describing data with fewer numbers while losing as little as possible. When several measured properties move together, they partly say the same thing. People who travel far also visit many different places and spend little time at home, so radius, places per day and home share are three views of one underlying difference between people. PCA finds such shared directions and replaces the original columns with a smaller set of new ones, the principal components, ordered by how much of the variation in the data each one carries.
+
+The components come from the covariance matrix of the data, the table of how every pair of columns varies together. Its eigenvectors are directions in the space of the original columns, and its eigenvalues say how much the data spreads along each of those directions. The eigenvector with the largest eigenvalue is the first principal component: the single direction along which the data varies most. The second is the direction of largest spread at right angles to the first, and so on, until there are as many components as original columns. Each component is a weighted mix of the original columns, and the weights, called loadings, show which columns it is made of. Dividing an eigenvalue by the sum of all eigenvalues gives the share of the total variation that component explains. In practice the components are computed with the singular value decomposition of the data matrix, which gives the same directions and eigenvalues without forming the covariance matrix, and checking that the two agree is part of the code.
+
+Figure 1 shows the idea with two correlated traits. PCA rotates the cloud so that the first axis runs along its longest stretch; in the rotated picture the first component carries 93% of the variation and the second only 7%, so one number per point would describe almost everything. That is dimensionality reduction: keep the first few components, drop the rest, and work with a smaller table that keeps most of the information. It matters for analysis because many columns that repeat each other add noise, slow down methods such as clustering and make results harder to read, and it matters for visualisation because people can look at two or three dimensions, not fifteen.
+
+<Figure n={1} title="PCA as a rotation" src={o04} alt="Two scatter plots of the same 400 toy points. Left: an elongated cloud rising from lower left to upper right, with a long orange arrow along it labelled PC1, eigenvalue 4.38, and a short green arrow across it labelled PC2, eigenvalue 0.35. Right: the same cloud rotated so that its long side lies along the horizontal axis, labelled PC1 93 percent of the variance, and the vertical axis PC2 7 percent.">
+Two correlated toy traits with their principal directions drawn as arrows whose length follows the eigenvalue (left), and the same cloud rotated onto those directions (right). The first component alone carries 93% of the variation.
+</Figure>
+
+High-dimensional data has problems of its own, which is a further reason to reduce it. As the number of dimensions grows, points spread out so much that the nearest and the farthest neighbour of a point end up almost equally far away, and almost all of the space lies near its edges (Figure 2). Distance-based methods like k-means then have less and less to work with, any pattern needs far more data to be seen, and charts become impossible. Reducing correlated columns to a few components helps with all of this. The price is that each component is a mix of the original columns, so it has to be interpreted rather than read off directly, and that PCA only finds straight-line combinations: it can miss structure that is curved or that lives in a small, low-variance direction.
+
+<Figure n={2} title="Why many dimensions are hard" src={o05} alt="Two line charts against the number of dimensions from 1 to 200 on a logarithmic axis. Left: the ratio of the nearest to the farthest distance from a random point rises from 0 at 1 dimension to about 0.8 at 200 dimensions. Right: the percentage of a unit cube within 5 percent of its surface rises from 10 percent at 1 dimension to almost 100 percent by 50 dimensions.">
+For 500 random points: the ratio between the nearest and the farthest distance from a point (left) and the share of a cube that lies within 5% of its surface (right), as the number of dimensions grows. In many dimensions near and far look alike, and almost everything is at the edge.
+</Figure>
+
+In this project PCA answers question 4 of the Introduction: how few traits are enough to tell one person's routine from another's. It is run on the same fifteen traits of 24,514 people that the Clustering tab groups, and it gives a handful of named axes along which people differ. Those axes are then used in three ways: to see the kinds of movers from the Clustering tab in two dimensions, to test whether clustering works better on the components than on the raw traits, and to measure how far a person moves away from their own ordinary routine during the emergency. A second, separate PCA is run on places, on the counts of 85 anonymous categories of places in each grid cell, because the later studies need a compact description of what surrounds a person.
+
+## Data
+
+PCA needs a table of numbers only, one row per thing and one column per property, with no labels. The columns must be centred, so that the spread is measured around the average, and when they are in different units they must also be scaled, otherwise the column with the largest numbers takes over the first component. Standardising every column to mean 0 and standard deviation 1 does both, and PCA on standardised data is the same as PCA on the correlation matrix.
+
+**People.** The table is the person trait table described on the Clustering tab:
+
+- **One row per person**, the average of their fifteen-day blocks in days 0-44, for 24,514 people.
+- **Fifteen columns** describing how far a person ranges, how rooted they are and when they are out (all fifteen are explained on the Clustering tab, under Data).
+- **Before** (Table 1): the traits in their own units, kilometres, counts of places, shares between 0 and 1.
+- **After** (Table 2): six skewed traits log-transformed, then all fifteen standardised, fitted on the 17,164 development people only. The PCA is fitted on these 17,164 rows.
+- **Held out**: three numbers about how well a person is recorded (records per day, share of days with a record, daily active span) are not part of the PCA and are used afterwards to check what the components measure.
+
+<Figure label="Table" n={1} title="Before: person traits in original units" src={t07} alt="Table image with six rows, one per person, and fifteen columns from rg_km to regularity in their original units.">
+Six development people with their fifteen traits for days 0-44 in their own units. Radius is in kilometres and runs to 16, while the shares stay between 0 and 1, so without scaling the distance traits would dominate.
+</Figure>
+
+<Figure label="Table" n={2} title="After: standardised, ready for PCA" src={t08} alt="Table image with the same six people and fifteen columns, now with values mostly between minus 2 and plus 2.">
+The same people after the log transform and standardisation. Every column now has mean 0 and standard deviation 1 across the development people, so each trait has the same chance to shape the components.
+</Figure>
+
+**Places.** The second table describes grid cells:
+
+- **One row per cell**: the 19,998 occupied 500 m cells that hold at least one point of interest.
+- **85 columns**: how many places of each anonymous category the cell has. The dataset publishes the category numbers but not their names.
+- **Before** (Table 3): raw counts, mostly zeros, with a median of 9 places per cell.
+- **After** (Table 4): log(1 + count), then standardised, so that a category with tens of thousands of places and a category with a handful count the same.
+
+<Figure label="Table" n={3} title="Before: places per category and cell" src={t09} alt="Table image with six rows, one per grid cell given by x and y, and columns cat1 to cat12 and poi_total, mostly zeros with poi_total between 24 and 95.">
+Six cells with their counts for the first 12 of the 85 categories and the total number of places. Most entries are zero, and a few large categories hold most of the places.
+</Figure>
+
+<Figure label="Table" n={4} title="After: log counts, standardised" src={t10} alt="Table image with the same six cells and columns cat1 to cat12, now with values such as minus 0.18, 1.55 and 5.36.">
+The same cells after log(1 + count) and standardisation. A single place of a rare category now shows up as a large value, the same weight a common category gets.
+</Figure>
+
+Links: the raw YJMob100K files are on [Zenodo, record 10836269](https://zenodo.org/records/10836269); the cleaned person, cell and record tables are in the release [Processed tables, Part 1](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/releases/tag/data-v1); samples of the two tables used here are [`data/samples/person_traits_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/data/samples/person_traits_sample.csv) (500 people) and [`data/samples/cell_poi_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/data/samples/cell_poi_sample.csv) (500 cells).
+
+## Code
+
+Python 3.11 with pandas, NumPy, scikit-learn and Matplotlib, run on the Alpine cluster at the University of Colorado Boulder.
+
+- [`notebooks/03_kinds_of_movers.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/notebooks/03_kinds_of_movers.ipynb): both PCAs, the SVD check, the comparison with clustering, the drift measures and every figure on this tab.
+- [`code/profiles.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/code/profiles.py): turns the 29.4 million records into the person traits.
+
+## Results
+
+### People: five components carry 83%
+
+The first five eigenvalues are 7.41, 1.72, 1.44, 1.04 and 0.82, against an average of 1 for fifteen standardised traits, and the singular value decomposition of the same matrix gives the same values and directions. The first component alone explains 49.4% of the variation in all fifteen traits (Figure 3). Five components explain 82.8% and seven explain 90.1%; four have an eigenvalue above 1. This tab keeps five, by an 80% rule, which is also where the scree plot flattens: from the sixth component on each adds less than 5%. So the answer to question 4 is about five. Fifteen measured traits come down to five independent ways in which people's ordinary routines differ, and a single one of them carries half the story.
+
+<Figure n={3} title="How much each component carries" src={f17} alt="Bar and line chart against principal components 1 to 15. Bars show the percentage of variance: 49.4 for PC1, 11.5, 9.6, 6.9 and 5.4 for PC2 to PC5, then falling below 5. The cumulative line rises through 82.8 percent at 5 components and 90.1 at 7, with dashed lines at 80 and 90 percent.">
+The share of the variation in the fifteen traits carried by each principal component (bars) and the running total (line), for 17,164 development people. Five components pass 80% and seven pass 90%.
+</Figure>
+
+### What the components mean
+
+The loadings say which traits make up each component (Figure 4). The sign of a component is arbitrary, so PC1 and PC2 were flipped to read naturally.
+
+- **PC1, range (49%).** Every spread trait loads positively and almost equally (radius, cells per day, entropy, moving share, step length and daily reach, 0.27 to 0.33), and the two rootedness shares load negatively (home share -0.32, two main places -0.34). It is one axis from people who stay around a couple of places to people who cover a wide area.
+- **PC2, weekday routine (11%).** Being away on workday middays (0.45) and mornings (0.39) and having several regular places (0.39) stand against the weekend ratio (-0.47). High values mean a fixed weekday life away from home, low values mean a life that happens more on weekends.
+- **PC3, night and weekends (10%).** Mostly the weekend ratio (0.49) against the share of night records (-0.47).
+- **PC4, regular long day (7%).** Regularity (0.54) together with daily reach (0.39), evening away (0.39) and radius (0.35): people who go to the same far place every workday and come back late.
+- **PC5, night anchors (5%).** Almost only night records (0.69) and number of regular places (0.50).
+
+<Figure n={4} title="Loadings of the first five components" src={f18} alt="Heat map with fifteen rows for the traits and five columns for PC1 range, PC2 weekday routine, PC3 night and weekends, PC4 regular long day and PC5 night anchors, coloured from blue for negative to red for positive loadings, with values written in the cells. PC1 is red for all spread traits and blue for home share and top-two share. PC2 is red for midday away, morning away and number of anchors and blue for the weekend ratio. PC5 is dark red for night share.">
+How strongly each trait feeds each of the first five components, from -0.7 (blue) to 0.7 (red). This is the relationship between the original variables and the components: PC1 is made of the spread traits against rootedness, PC2 of weekday absence against the weekend ratio.
+</Figure>
+
+The biplot puts both on one picture (Figure 5): people as a density on the first two components and the traits as arrows. An arrow's direction shows which way a trait grows across the plane and its length shows how strongly the two components represent it. The people form a triangle. Along PC1 they run from the rooted corner on the left, where the home share and two-main-places arrows point, to the wide-ranging side on the right, where radius, reach, steps, cells per day and entropy all point together. PC2 splits the wide-ranging side: up are people away every workday morning and midday with several fixed places, down are people whose time away tilts to the weekend.
+
+<Figure n={5} title="People and traits on the first two components" src={f19} alt="Hexagon density plot of 17,164 people on PC1 range (49 percent) and PC2 weekday routine (11 percent), forming a triangle, coloured by the median records per day from about 10 to 28. Black arrows from the centre: midday away and morning away point up and right, number of anchors and regularity up and left, top-two share and home share left and down, the spread traits right and slightly down, and the weekend ratio straight down. Hexagons on the left side are greener, meaning more records per day.">
+A biplot of the 17,164 development people on the first two components, with arrows for the traits that the two components represent best and colour for records per day, which was not part of the PCA. Rooted people on the left are recorded more per day than wide-ranging people on the right.
+</Figure>
+
+The colour in Figure 5 is a check that was planned before the PCA. Records per day, share of days observed and the daily active span were kept out of the PCA, so their correlation with the components shows whether a component measures behaviour or recording. PC2 has nothing to do with recording (correlations -0.01, 0.05 and 0.00): the weekday routine axis is pure behaviour. PC1 correlates -0.44 with the active span and -0.26 with records per day. PC3 is the most tangled with recording (-0.42 with records per day, -0.53 with active span), so it is partly a measure of how well a person is seen, and it is read with that caution.
+
+### What PCA does for the clustering
+
+The Clustering tab groups people on all fifteen traits. A common alternative is to run PCA first and cluster the component scores instead, so the question is whether that would have found different or better kinds of movers.
+
+K-means on the first five component scores raises the silhouette at every k, from 0.15 to 0.21 at six groups and from 0.21 to 0.27 at three. The groups themselves hardly change: they agree with the fifteen-trait groups at an adjusted Rand index of 0.93 to 0.98, which means that almost every person lands in the same group either way. Measured back in the full fifteen-trait space, the silhouette of the PCA-based groups is the same as before (0.148 against 0.149 at six groups). So the higher score comes from leaving out the last 17% of variation, mostly noise that blurs every boundary a little, and not from finding better groups.
+
+**Clustering after PCA would have found the same six kinds of movers. The order of the two methods does not change the archetypes or anything concluded from them.** What PCA adds is a shorter description of the same people, five numbers instead of fifteen, and the two-dimensional view in which the Clustering tab shows its groups.
+
+### How far people move in the emergency
+
+The five components, frozen on days 0-44, also give a continuous measure of change. For every person and fifteen-day block, two numbers were computed in standardised trait units: the distance from the centre of the person's own kind of mover, and the part of the block's fifteen traits that the five frozen components cannot reconstruct. Both shift up in the emergency (Figure 6). The median distance from the own centre grows from 2.81 in the ordinary period to 3.15 in the emergency and the reconstruction error from 1.65 to 1.80, with a longer tail of people far from where they used to be. Regular commuters move the most (2.65 to 3.17), far roamers the least (2.24 to 2.39).
+
+<Figure n={6} title="Distance from one's own routine" src={f27} alt="Two step histograms in standardised trait units. Left: distance from the person's own kind, blue for days 45 to 59 with median 2.81 and red for days 60 to 74 with median 3.15; the red distribution is lower at its peak and has a heavier right tail. Right: what five components cannot reconstruct, blue median 1.65 and red median 1.80, with the same shift.">
+For every person, how far their fifteen days sit from the centre of their own kind (left) and how much of them the five frozen components cannot reconstruct (right), in the ordinary period (blue) and the emergency (red). Both measures move right in the emergency, and the tail of large changes grows.
+</Figure>
+
+### Places: no shortcut
+
+PCA on the 85 categories of places behaves very differently (Figure 7). The first component carries 27.1%, and all 85 categories load on it with the same sign: it says how many places a cell has of any kind, and it correlates 0.81 with the log of the cell's total. After it the spectrum is flat. The second component carries 4.7%, the third 2.9%, and from there each adds one or two percent; 48 components are needed for 80% and 63 for 90%, and thirteen have an eigenvalue above 1. Fifteen traits of people collapse into five components. The 85 categories of places do not collapse beyond "how much is here", because each cell is its own mix of many small, unrelated kinds of places.
+
+<Figure n={7} title="People compress, places do not" src={f28} alt="Left: bar chart of the variance share of the first 30 of 85 place components, 27.1 percent for the first, 4.7 for the second, then a long flat run of bars between 1 and 2 percent. Right: cumulative variance against components kept, a steep blue curve for the 15 person traits reaching 80 percent at 5 components and a slow orange curve for the 85 place categories reaching 80 percent near 48.">
+The share of variation per component for the place categories (left), and the cumulative curves for places and people side by side (right). People pass 80% with five components, places need 48.
+</Figure>
+
+Drawn on the grid, the first place components still show structure (Figure 8). PC1 is the density map again, bright in the dense core and along the corridors. PC2 is spatial even though nothing about location went into it: its negative end fills the core and the larger centres around it, and its positive end covers the outer cells. So the categories that load positively on PC2 are typical of the edges of the area and the negative ones of its centres, beyond simply having more of everything. PC3 is a patchwork of single cells inside the core. Since the categories have no names, these axes are read through when people are in those cells: the cells that are busiest at midday, the most workplace-like on the Clustering tab, are the only rhythm type that sits on the outer side of PC2, and the cells busiest in the afternoon and evening are the dense ones with the highest PC1.
+
+<Figure n={8} title="Place components on the grid" src={f29} alt="Three maps of the 200 by 200 grid. PC1, how many places, 27.1 percent: bright yellow in a dense central core and along branching corridors, dark elsewhere. PC2, 4.7 percent: blue in the core and in several outer centres, pale red in the outer cells. PC3, 2.9 percent: mostly near zero with scattered dark red and dark blue cells inside the core.">
+The first three components of the 85 place categories, mapped onto the 500 m grid in the same orientation as the maps on the DataPrep_EDA tab. The first measures how many places a cell has, and the second separates the central places from the outer ones.
+</Figure>
+
+## Conclusions
+
+Fifteen measured things about how a person moves look like a lot of detail, but most of it repeats. Five underlying differences between people carry more than four fifths of the picture, and one of them carries half: how widely a person ranges, from people whose days fit into a couple of places to people who cover a large part of the city. The second is whether a person's life is built around a fixed weekday routine away from home, and it has nothing to do with how often a person happens to be recorded. Together these two axes are enough to draw the whole population on a page and to see the kinds of movers from the Clustering tab side by side.
+
+The same axes give a way to measure change. Fixed on the ordinary weeks, they show people moving further from their own usual routine during the emergency than in an ordinary fortnight, and regular commuters moving the most. For the project, this is the kind of signal a simulated stand-in for a person could watch to notice that the person it represents has changed, before its predictions go wrong.
+
+Places are different. The 85 kinds of places in each cell do not reduce to a few patterns. Apart from how many places a cell has and whether it is central or on the edge, every neighbourhood is its own mix. For the later studies this means that a short summary is enough to describe people, while a description of what surrounds them needs either many components or a different idea, such as the daily rhythm of a place used on the Clustering tab.

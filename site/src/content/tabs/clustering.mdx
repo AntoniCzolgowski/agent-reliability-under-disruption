@@ -1,0 +1,190 @@
+---
+title: "Clustering"
+description: "Six kinds of movers found without labels in 25,000 people's ordinary weeks, and how many of them still fit their kind once the emergency starts."
+---
+
+import Figure from "../../components/Figure.astro";
+import o01 from "../../assets/figures/o01_kmeans_steps.png";
+import o02 from "../../assets/figures/o02_euclidean_vs_cosine.png";
+import o03 from "../../assets/figures/o03_toy_dendrogram.png";
+import t02 from "../../assets/figures/t02_yjmob_clean.png";
+import t07 from "../../assets/figures/t07_person_traits.png";
+import t08 from "../../assets/figures/t08_person_traits_scaled.png";
+import f20 from "../../assets/figures/f20_kmeans_choose_k.png";
+import f21 from "../../assets/figures/f21_kmeans_k3_k5_k6.png";
+import f22 from "../../assets/figures/f22_kinds_daily_rhythm.png";
+import f23 from "../../assets/figures/f23_hclust_dendrogram.png";
+import f24 from "../../assets/figures/f24_hclust_vs_kmeans.png";
+import f25 from "../../assets/figures/f25_kinds_persistence.png";
+import f26 from "../../assets/figures/f26_kinds_transitions.png";
+import f30 from "../../assets/figures/f30_place_rhythms.png";
+import f32 from "../../assets/figures/f32_place_rhythms_emergency.png";
+
+<p class="lede">Nobody in YJMob100K comes with a label saying commuter or homebody. Clustering asks whether such kinds exist anyway, using nothing but how people moved, and this tab then asks whether people still belong to their kind once the emergency starts.</p>
+
+## Overview
+
+Clustering is a way of finding groups in data when nobody has said what the groups are. Every person, place or object is described by a list of numbers, and a clustering method puts the ones whose numbers are alike into the same group and the ones whose numbers differ into different groups. It is unsupervised learning: there is no right answer to train on, so the groups have to be judged afterwards by whether they are stable and whether they make sense.
+
+There are two broad families. Partitional methods such as k-means decide on a number of groups k in advance and split the data into exactly k groups at once. K-means places k centres, assigns every point to its nearest centre, moves each centre to the average of its points, and repeats until nothing changes (Figure 1). It is fast enough for tens of thousands of people, but it tends to find round groups of similar size, and because it can end in a local optimum it is restarted several times from different starting centres. Hierarchical methods do not fix k. Agglomerative clustering starts with every point as its own group and merges the two closest groups again and again until one is left, and the history of merges forms a tree called a dendrogram (Figure 3). Cutting the tree at some height gives the groups; the taller the vertical line before a merge, the more different the two groups being merged.
+
+<Figure n={1} title="How k-means finds groups" src={o01} alt="Four small scatter plots of the same toy points in three blobs. Panel 1 shows grey points and three black crosses as starting centres. Panel 2 colours each point by its nearest centre. Panel 3 shows arrows moving each centre to the middle of its coloured points. Panel 4 shows the final three groups with dotted paths of the centres.">
+K-means on toy data with k = 3: start from three centres, give each point to the nearest one, move each centre to the mean of its points, and repeat. The dotted lines in the last panel are the paths the centres took until the groups stopped changing.
+</Figure>
+
+Everything depends on what counts as alike, which is the job of the distance metric. Euclidean distance is the straight line between two points: it asks how far apart two people are on all their traits together, and it is the distance k-means minimises. Cosine distance is one minus the cosine of the angle between two points seen as arrows from the average person: it asks whether two people differ from the average in the same directions, regardless of by how much. In Figure 2, person A is closest to C by Euclidean distance but closest to B by cosine distance, because B is a stronger version of A. Manhattan distance, the sum of the differences trait by trait, is a third common choice. The hierarchical clustering on this tab uses cosine distance and the k-means uses Euclidean distance, so the two methods look at the people in different ways.
+
+<Figure n={2} title="Euclidean and cosine distance" src={o02} alt="Two panels showing the same three arrows from the origin to points A, B and C. Left: dashed lines from A to B (2.41) and from A to C (0.92), with the note A is closest to C. Right: small arcs for the angles, A to B 2 degrees and cosine distance 0.00, A to C 20 degrees and cosine distance 0.06, with the note A is closest to B.">
+The same three people seen two ways. By straight-line distance A is closest to C, but by the angle between their directions A is closest to B, a more extreme person of the same kind.
+</Figure>
+
+<Figure n={3} title="A dendrogram from five points" src={o03} alt="Left: five points on a line at 0, 1, 4, 6.1 and 7.4. Right: the dendrogram. 0 and 1 merge at height 1, 6.1 and 7.4 merge at 1.3, 4 joins them at about 2.7, and everything merges at about 5.3. A dashed line at 2.5 cuts the tree into two groups.">
+Agglomerative clustering of five numbers: the closest pair merges first, and each merge is drawn at the height of the distance between the groups. A cut through the tall gap at 2.5 gives two groups, and a lower cut would give more.
+</Figure>
+
+In this project clustering is used twice. The main use is on people: each of 24,514 people is described by fifteen numbers about their ordinary weeks, and k-means and hierarchical clustering look for kinds of movers among them. Those kinds are then frozen and used as a ruler, to see who still fits their kind in a normal fortnight and who stops fitting it in the emergency. That is the reliability question of the whole project in a simple form, and the kinds become the groups that the later studies report their results by. A second, smaller use is on places: 11,858 grid cells are grouped by the time of day at which people are in them. One earlier study sorted the same YJMob100K people into returners and explorers by fixed thresholds on how far they travel ([Armantalab, Hawkins and Kontar, 2025](https://arxiv.org/abs/2510.00469)). The kinds here come from the data instead of a threshold, and they include when people move as well as how far.
+
+## Data
+
+Clustering needs a table of numbers with no labels: one row per thing to be grouped, one column per measured property, and nothing that says in advance which group a row belongs to. It also needs the columns to be on comparable scales, because a column measured in kilometres would otherwise outweigh a column measured as a share between 0 and 1.
+
+The cleaned YJMob100K table from the DataPrep_EDA tab is not like that. It has one row per record, 29.4 million of them, each saying that a person was seen in a grid cell during a half-hour of a day (Table 1). To group people, every person first has to become one row of numbers that sums up how they live their days.
+
+Before any number is computed, a few things are fixed for each person:
+
+- **Home** is the cell where the person is seen most often between midnight and 5 am on days 0-44.
+- **The daytime place** is the cell where they are seen most often between 10 am and 4 pm on workdays of days 0-44, which for many people is a workplace or a school.
+- **"At home"** means anywhere in the 3 by 3 block of cells around the home cell, because a person who stays in one spot is often recorded in a neighbouring 500 m cell as well. The same goes for the daytime place.
+- **Five blocks of fifteen days** split each person's 75 days: days 0-14, 15-29 and 30-44 are the reference period, days 45-59 are an ordinary period that nothing is fitted on, and days 60-74 are the emergency. The same fifteen numbers are computed for every person in every block.
+
+The first six numbers say how far a person ranges.
+
+- **Radius of gyration** (`rg_km`): how far, in kilometres, a person's records typically lie from the middle point of all their positions. It is small for someone whose life fits in one neighbourhood and large for someone spread across the city.
+- **Cells per day** (`cells_per_day`): how many different 500 m cells the person is seen in, divided by the number of days they are seen.
+- **Spread over places** (`entropy`): how evenly the records are shared among the cells the person visits, from 0 when everything happens in one cell to 1 when every visited cell gets the same share.
+- **Moving share** (`moving_share`): of all pairs of records exactly half an hour apart, the share in which the person is in a different cell the second time.
+- **Step length** (`step_km`): the typical length of those half-hour moves, in kilometres.
+- **Daily reach** (`extent_km`): on each day, the farthest the person gets from home, averaged over the days.
+
+The next three say how rooted a person is.
+
+- **Home share** (`home_share`): the share of all records that are at home.
+- **Two main places** (`top2_share`): the share of records in the person's two most visited cells, whatever those cells are.
+- **Regular places** (`n_anchors`): how many cells hold at least 5% of the person's records, a count of the places they keep coming back to.
+
+The last six say when a person is out, mostly on workdays.
+
+- **Away in the morning, at midday, in the evening** (`morning_away`, `midday_away`, `evening_away`): on workdays, of the records between 7 and 9 am, between 10 am and 4 pm, and between 6 and 10 pm, the share that are away from home.
+- **Night records** (`night_share`): the share of all the person's records that fall between midnight and 5 am. Records are mostly taken while people are out and moving, so this says how active, or how visible, someone is at night.
+- **Weekend ratio** (`weekend_away_ratio`): the share of daytime records away from home on weekend-like days divided by the same share on workdays. Above 1 means a person is out more on weekends than on workdays.
+- **Regularity** (`regularity`): the share of workdays on which the place where the person spends most of 10 am to 4 pm is their usual daytime place.
+
+From these traits to the table that is clustered:
+
+- **Rates, not counts.** Every trait is a share, a rate or a typical value, never a count of records, so a person who is simply recorded less often does not look different because of it.
+- **One reference row per person.** It is the average of the person's blocks in days 0-44, kept for the 24,514 people who have at least two usable blocks and all fifteen traits (Table 2).
+- **Log transform.** Six traits were strongly skewed, with a few people far out in the tail (step length, weekend ratio, daily reach, night records, radius and cells per day), so they were log-transformed first.
+- **Standardisation.** All fifteen were then scaled to mean 0 and standard deviation 1 (Table 3), so a trait in kilometres and a trait between 0 and 1 count the same.
+- **Fitted on development people only.** The scaler was fitted on the 17,164 development people and applied unchanged to the 7,350 evaluation people and to every later block.
+- **Recording kept apart.** Three more numbers describe how well a person is recorded rather than how they move: records per day, the share of days with any record, and the hours between the first and last record of a day. They stay out of the clustering and are used afterwards as a check.
+
+<Figure label="Table" n={1} title="Before: the cleaned record table" src={t02} small alt="Table image with eight rows for person 1 and the columns of the cleaned YJMob100K table: uid, d, t, x, y, phase, weekend, holiday_like, window, gap_prev, step_prev, adjacent, big_jump, flicker_mid, split and eligible.">
+The input as it comes out of the preparation on the DataPrep_EDA tab: one row per record, 29.4 million rows. It has positions and times but no row that describes a person as a whole.
+</Figure>
+
+<Figure label="Table" n={2} title="After: fifteen traits per person" src={t07} alt="Table image with six rows, one per person, and fifteen columns from rg_km to regularity in their original units, for example radius of gyration of 8.12 km and regularity of 0.11 for person 21451.">
+Six development people with their fifteen traits averaged over days 0-44, in original units. This is the unlabelled numeric table that clustering needs, one row per person.
+</Figure>
+
+<Figure label="Table" n={3} title="After: the same people, standardised" src={t08} alt="Table image with the same six people and fifteen columns, now with values mostly between minus 2 and plus 2, for example 1.19 for the radius of person 5343.">
+The same six people after the log transform of six skewed traits and standardisation, so every trait counts equally. Person 5343 sits more than one standard deviation above average on radius and cells per day, a wide-ranging person.
+</Figure>
+
+Links: the raw YJMob100K files are on [Zenodo, record 10836269](https://zenodo.org/records/10836269); the cleaned record table is in the release [Processed tables, Part 1](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/releases/tag/data-v1); a 500-person sample of the trait table used here is [`data/samples/person_traits_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/data/samples/person_traits_sample.csv).
+
+## Code
+
+Python 3.11 with pandas, NumPy, scikit-learn, SciPy and Matplotlib, run on the Alpine cluster at the University of Colorado Boulder.
+
+- [`notebooks/03_kinds_of_movers.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/notebooks/03_kinds_of_movers.ipynb): the traits, k-means, hierarchical clustering, the frozen-kinds test, the checks and every figure on this tab.
+- [`code/profiles.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/main/code/profiles.py): turns the 29.4 million records into the person and block traits.
+
+## Results
+
+### How many kinds?
+
+K-means was run for every k from 2 to 10, ten times from different starting centres each, on the 17,164 development people. The elbow plot has no clear bend (Figure 4). The mean silhouette, which compares how close a person is to their own group with how close they are to the next group, is highest at k = 2 (0.29), falls to 0.21 at k = 3 and stays near 0.15 from k = 6 on. Values this low mean that people do not form separate islands. They form one continuous cloud, and any k cuts it rather than finds it. So stability was checked as well: k-means was fitted on two different bootstrap samples, both fits labelled everyone, and their agreement was measured with the adjusted Rand index, twenty times per k. k = 2 and k = 3 come back almost identical every time (0.98 and 0.97). k = 4 and k = 5 do not (0.84 and 0.76, with bad draws down to 0.53). k = 6 recovers to 0.83.
+
+<Figure n={4} title="Choosing k" src={f20} alt="Two line charts against k from 2 to 10. Left: the within-cluster sum of squares falls from about 173 thousand at k = 2 to about 101 thousand at k = 10 without a sharp bend. Right: the mean silhouette falls from 0.29 at k = 2 to 0.13 at k = 10, and the bootstrap stability starts at 0.98, drops to 0.76 at k = 5, rises to 0.83 at k = 6 and stays between 0.73 and 0.83 after.">
+The elbow (left) and the mean silhouette and bootstrap stability (right) for k = 2 to 10. The silhouette picks k = 2, stability is high at 2 and 3, dips at 4 and 5 and recovers at 6.
+</Figure>
+
+The silhouette's answer, k = 2, only splits people into those who stay close to home and those who range wide. k = 3 is the most robust description with some content. This tab works with k = 6, which is as stable as anything above k = 3 and separates kinds that k = 3 merges, such as people who go to the same place every workday and people who range as far without a fixed place. Figure 5 shows k = 3, 5 and 6 on the first two principal components from the PCA tab.
+
+<Figure n={5} title="Three values of k" src={f21} alt="Three scatter plots of 6,000 people on PC1 range and PC2 weekday routine, coloured by cluster for k = 3, 5 and 6, with black crosses at the cluster centres. The people form a triangle; the clusters cut it into slices from the left, rooted, side to the right, wide-ranging, side, with an extra group at the top for regular commuters at k = 6.">
+K-means with k = 3, 5 and 6, shown on the two main axes of the PCA tab, with a cross at each centre. The groups cut one triangular cloud into slices rather than circling separate islands.
+</Figure>
+
+### Six kinds of movers
+
+Named from their centres, the six kinds read as six ways of living a fortnight. Far roamers (3,890 development people) range widest, with a radius of 14.5 km, 8.5 different cells a day, few fixed places and the least regular days. Mid-range movers (4,556) live the same kind of life at about half the scale. Regular commuters (3,020) are away from home on 90% of workday mornings and spend 78% of workday middays at the same place. Local regulars (3,242) stay within about 6 km and keep half their records near home. Weekend movers (1,028) are away from home more than twice as much on weekends as on workdays. Homebodies (1,428) keep three quarters of their records near home and move within 3 km.
+
+The clustering was never told anything about the time of day, and still each kind has its own shape of day (Figure 6). On workdays regular commuters and far roamers are both away more than 94% of the time between 8 am and 3 pm, but far roamers are also away 60% of the time in the middle of the night, and part of what makes them far roamers is that they have no fixed place at night. Weekend movers leave early on workdays, are mostly home through the middle of the day and go out again in the evening. Homebodies never pass 41%.
+
+<Figure n={6} title="When each kind is away from home" src={f22} alt="Two line charts, workdays and weekend-like days, with one line per kind showing the percentage of records away from home at each half hour. On workdays far roamers and regular commuters rise to about 96 percent from 8 am to 3 pm, far roamers stay above 60 percent at night, weekend movers have peaks at 6:30 and 19:00 and a dip to about 28 percent at noon, and homebodies stay below 41 percent. On weekend-like days the lines flatten and commuters, mid-range movers and weekend movers come together near 80 percent.">
+For each kind, the share of records away from home in every half hour of workdays (left) and weekend-like days (right), development people, days 0-44. Every kind has its own shape of day, and on weekends most of the differences shrink.
+</Figure>
+
+### A second opinion from the tree
+
+Hierarchical clustering with cosine distance was run on a random sample of 3,000 development people, since a tree of all 17,164 would need 147 million pairwise distances. Average linkage, which joins groups by the mean distance between their members, peeled off tiny groups of 45 and 60 people as the tree was cut lower. Complete linkage, which joins groups by their farthest pair, kept the groups balanced and is the one shown in Figure 7. Its cosine silhouette is 0.37 at two groups, 0.35 at three and 0.32 at four, and then falls to 0.28 and 0.23. So the tree suggests three or four groups. The last merges in the dendrogram are tall and close together, and there is no height where a cut is obviously right, which is the same message as the low silhouette of k-means.
+
+<Figure n={7} title="Dendrogram, cosine distance, complete linkage" src={f23} alt="Dendrogram of the last 40 merges for 3,000 people, with the vertical axis showing cosine distance from 0 to 2. Four coloured branches merge between about 1.8 and 2.0. Dashed and dotted lines mark the cuts that give four and six groups, close together near 1.85.">
+The last 40 merges of the tree built on 3,000 development people, with the cuts that give four and six groups. The top merges sit close together near the maximum distance, so a small change in the cut height changes the number of groups.
+</Figure>
+
+Cut at six groups and laid against the six k-means kinds of the same people, the tree agrees on the main lines (Figure 8). The wide-ranging people form one branch in both methods: 578 far roamers and 340 mid-range movers share branch H2 with almost nobody else. Regular commuters have a branch of their own, H6. The rooted side is a single branch in the tree, holding local regulars, weekend movers and homebodies together. Cosine distance looks only at the direction in which a person differs from the average, and all three kinds differ toward home, so the tree joins them where k-means, which also counts how far, splits them. The adjusted Rand index between the two methods is 0.54 at two and three groups and about 0.36 at six.
+
+<Figure n={8} title="Where each k-means kind lands in the tree" src={f24} alt="Heat map with six rows for the tree's groups H1 to H6 and six columns for the k-means kinds, with counts in the cells. H2 holds 578 far roamers and 340 mid-range movers. H6 holds 387 regular commuters. H1 holds 468 local regulars, 142 weekend movers and 245 homebodies.">
+The 3,000 people of the tree counted by their tree group (rows) and their k-means kind (columns), coloured by the share of each kind. Far roamers with mid-range movers and regular commuters on their own are found by both methods, while the three rooted kinds are one branch of the tree.
+</Figure>
+
+### Do people keep their kind in the emergency?
+
+The scaler and the six centres were frozen on the development people and days 0-44. Then every person's block, for development and evaluation people alike, was measured again with the same fifteen traits and given the nearest of the same six kinds. A person is still in their kind if a new block lands where their reference period did. Nothing is refitted in between: the six kinds are one ruler, and only the person's behaviour is measured anew.
+
+In the ordinary test period, days 45-59, which nothing was fitted on, 74% of people are still in their kind. In the emergency, days 60-74, it is 59%. The evaluation people, who were never part of any fit, give 74% and 60%. The drop is not the same for everyone (Figure 9). Homebodies barely change (73% to 69%), and far roamers stay the most stable kind (87% to 74%). Regular commuters lose the most, 20 points, from 76% to 56%, followed by weekend movers and local regulars, who end at 49%, the lowest of all.
+
+<Figure n={9} title="Who keeps their kind of routine in the emergency" src={f25} alt="Dot plot with one row per kind and two dots per row: blue for days 45 to 59 and red for days 60 to 74, joined by a grey line. Far roamers 87 to 74 percent, mid-range movers 67 to 55, regular commuters 76 to 56, local regulars 66 to 49, weekend movers 74 to 56, homebodies 73 to 69.">
+The share of each kind whose fifteen days still land in the kind that days 0-44 gave them, in an ordinary period (blue) and the emergency (red). Kinds built around a fixed weekday rhythm lose the most, and homebodies hardly change.
+</Figure>
+
+The people who leave their kind do not scatter at random (Figure 10). In the ordinary period the moves go both ways in similar amounts. In the emergency they mostly point toward the rooted end: regular commuters become mid-range movers (20%) or local regulars (17%), far roamers become mid-range movers (22%), and local regulars become homebodies (16%).
+
+<Figure n={10} title="Where people go when they leave their kind" src={f26} alt="Two heat maps of six by six cells, rows for the kind on days 0 to 44 and columns for the kind in the new period, with row percentages. Left, days 45 to 59: the diagonal holds 66 to 87 percent. Right, days 60 to 74: the diagonal holds 49 to 74 percent, with larger shares to the right of it, for example 20 and 17 percent of regular commuters becoming mid-range movers and local regulars.">
+For each kind on days 0-44 (rows), the share that lands in each kind in the ordinary period (left) and the emergency (right). In the emergency the moves away from the diagonal lean toward smaller ranges and more time near home.
+</Figure>
+
+People are also recorded less in the emergency, a median 12.4% fewer records per day, so part of this could be thinner data rather than different behaviour. Two checks bound that part. Among the 5,587 people whose records per day changed by less than 10%, the share still in their kind falls from 74% to 64%, against 74% to 60% for everyone, so at most about a quarter of the drop comes from recording. And removing 30% of every person's records at random leaves nine in ten people in the same kind and barely moves the result (74% to 73% in the ordinary period, 60% to 59% in the emergency).
+
+### Kinds of places
+
+The same tool was used on places. For the 11,858 cells with at least 500 records on days 0-59, which hold 92% of all records, each cell was described by the share of its records in each half-hour of workdays and of rest days. K-means finds no natural groups here, with a silhouette of 0.15 at two groups and 0.06 at five: cells range continuously from places full at night to places full at midday. Five groups still describe that range well, and they are named by the hour at which they are busiest on workdays (Figure 11).
+
+<Figure n={11} title="Five rhythms of places" src={f30} alt="Two line charts, workdays and rest days, with five lines for the place groups, each showing the share of a cell's records in every half hour. The peak 12:00 line is highest from 8 am to 5 pm and lowest at night. The peak 20:00 line is the flattest, with the most records at night and a small morning bump. The peak 08:00 line rises sharply at 7 am.">
+The average daily rhythm of each of the five groups of cells, on workdays and on rest days. The noon group is a daytime-only place and the 20:00 group holds a quarter of its records at night, like places people return to.
+</Figure>
+
+Every group loses records in the emergency, because everyone is recorded less, but not equally (Figure 12). The noon cells, the most workplace-like, lose the most, 15% on workdays and 21% on rest days, while the busy afternoon and evening centres lose the least, about 8% on workdays.
+
+<Figure n={12} title="Which places lose records in the emergency" src={f32} alt="Bar chart with two bars per place group, workdays and rest days, showing the percentage change in records between days 45 to 59 and days 60 to 74. Peak 08:00: minus 13 and minus 16. Peak 12:00: minus 15 and minus 21. Peak 17:00: minus 8 and minus 11. Peak 18:00: minus 8 and minus 12. Peak 20:00: minus 13 and minus 18.">
+The change in records between the ordinary period and the emergency for each group of places, compared day type by day type. Workplace-like noon cells lose the most and the busy centres the least.
+</Figure>
+
+## Conclusions
+
+People in this city do not come in a few sharply separated types. Their ordinary weeks form one continuous range, from people who stay around home to people who cover a wide area, and any grouping cuts that range at some point rather than discovering a natural border. Within it, six kinds give a fair and stable description: far roamers, mid-range movers, regular commuters, local regulars, weekend movers and homebodies. Each has its own shape of day even though the method never saw a clock, and two quite different clustering methods agree on the main lines.
+
+The more important finding is what happens to these kinds when the emergency comes. In an ordinary fortnight about three people in four still fit the kind their earlier weeks gave them. During the emergency it is three in five. The people with the most fixed routines change the most: regular commuters, who in normal times go to the same place almost every workday, are the kind most often unrecognisable, while people who were already mostly at home hardly change. Those who leave their kind mostly move toward smaller ranges and more time near home, and places that look like workplaces lose the most visitors. Thinner recording explains only a small part of this.
+
+For the project this matters directly. A simulated stand-in built from someone's ordinary weeks would describe roughly three quarters of people correctly in a normal fortnight, but fewer during the emergency, and it would fail most often for exactly the people whose ordinary routine looked the most predictable. The later studies report how reliable such agents are separately for each of these six kinds, because an average over everyone would hide where they fail.
