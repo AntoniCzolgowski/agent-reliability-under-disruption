@@ -2,7 +2,7 @@
 
 **When does an agent built from a person's ordinary days stop being a reliable description of that person, and how much fresh evidence brings it back?**
 
-Antoni Czolgowski, M.S. Data Science, University of Colorado Boulder. An independent study that grows out of a machine learning course project (CSCI 5612, Fall 2026).
+Antoni Czolgowski, M.S. Data Science, University of Colorado Boulder. A machine learning course project (CSCI 5612, Fall 2026) combined with independent study.
 
 Website with all results and figures: **[antoniczolgowski.github.io/agent-reliability-under-disruption](https://antoniczolgowski.github.io/agent-reliability-under-disruption/)**
 
