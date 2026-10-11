@@ -1,0 +1,203 @@
+---
+// Keeping your kind: the opener of the Clustering tab. Six kinds of movers on days 0-44 on the left, the kind their later fortnight
+// lands in on the right, joined by ribbons sized by people; the toggle morphs the ribbons between the ordinary fortnight and the
+// emergency, dots travel along them, and a click on a kind follows it. Data: src/data/kinds_flow.json from code/export_part2_viz.py.
+import data from "../data/kinds_flow.json";
+const still = (v: number) => (v * 100).toFixed(1) + "%";
+const total = data.flow.ordinary.flat().reduce((a: number, b: number) => a + b, 0);
+const alt = `Six kinds of movers on the left, their kind in a later fortnight on the right, joined by ribbons sized by people. ${still(data.still.ordinary)} of people are still in their kind in the ordinary fortnight and ${still(data.still.emergency)} in the emergency.`;
+---
+
+<figure class="opener" id="flow">
+  <div class="opener-stage flow-stage">
+    <svg class="flow-svg" viewBox="0 0 1000 600" role="img" aria-label={alt}></svg>
+    <canvas class="flow-canvas" aria-hidden="true"></canvas>
+    <div class="opener-read" aria-live="polite">
+      <div class="big" id="flow-big">{still(data.still.ordinary)}</div>
+      <div class="small" id="flow-small">still in their kind, days 45-59</div>
+    </div>
+    <div class="opener-toggle" role="group" aria-label="Fortnight">
+      <button type="button" data-cond="ordinary" aria-pressed="true">Ordinary</button>
+      <button type="button" data-cond="emergency" aria-pressed="false">Emergency</button>
+    </div>
+  </div>
+  <p class="opener-line" id="flow-line">Of <span class="num">{total.toLocaleString("en-US")}</span> people, <span class="num">{still(data.still.ordinary)}</span> are still in their kind in the ordinary fortnight and <span class="num">{still(data.still.emergency)}</span> in the emergency.</p>
+  <p class="opener-note">Each ribbon is a group of people: their kind on days 0-44 on the left, the kind their fortnight lands in on the right, one travelling dot for every twenty of them. Click a kind to follow it.</p>
+</figure>
+
+<script>
+  import D from "../data/kinds_flow.json";
+  const KC = ["#2a78d6", "#4a3aa7", "#1baf7a", "#eda100", "#e87ba4", "#eb6834"];
+  const K: string[] = D.kinds, n = K.length;
+  const fig = document.getElementById("flow") as HTMLElement;
+  const svg = fig.querySelector<SVGSVGElement>(".flow-svg")!, cv = fig.querySelector<HTMLCanvasElement>(".flow-canvas")!;
+  const big = fig.querySelector<HTMLElement>("#flow-big")!, small = fig.querySelector<HTMLElement>("#flow-small")!, line = fig.querySelector<HTMLElement>("#flow-line")!;
+  const toggles = Array.from(fig.querySelectorAll<HTMLButtonElement>(".opener-toggle button"));
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 1000, H = 600, TOP = 104, BOT = 24, X0 = 196, X1 = 804, BW = 26, GAP = 7;
+  const DAYS: Record<string, string> = { ordinary: "days 45-59", emergency: "days 60-74" };
+  const FLOW = D.flow as Record<string, number[][]>, STILL = D.still as Record<string, number>;
+  const el = (t: string, a: Record<string, string | number>, p?: Element) => {
+    const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, String(a[k])); (p || svg).appendChild(e); return e;
+  };
+  const fmt = (v: number) => Math.round(v).toLocaleString("en-US");
+
+  interface Rib { i: number; j: number; c: number; y0a: number; y0b: number; y1a: number; y1b: number; }
+  interface Geo { rows: number[]; cols: number[]; total: number; lt: number[]; rt: number[]; lh: number[]; rh: number[]; rib: Rib[]; }
+
+  // geometry for one fortnight: band tops and heights left and right, and the four y values of every ribbon
+  function geometry(cond: string): Geo {
+    const M = FLOW[cond];
+    const rows = M.map((r) => r.reduce((a, b) => a + b, 0)), cols = K.map((_, j) => M.reduce((a, r) => a + r[j], 0));
+    const total = rows.reduce((a, b) => a + b, 0), scale = (H - TOP - BOT - GAP * (n - 1)) / total;
+    const lt: number[] = [], rt: number[] = [];
+    let y = TOP; rows.forEach((v, i) => { lt[i] = y; y += v * scale + GAP; });
+    y = TOP; cols.forEach((v, j) => { rt[j] = y; y += v * scale + GAP; });
+    const lo = lt.slice(), ro = rt.slice(), rib: Rib[] = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const c = M[i][j], h = c * scale;
+      rib.push({ i, j, c, y0a: lo[i], y0b: lo[i] + h, y1a: ro[j], y1b: ro[j] + h });
+      lo[i] += h; ro[j] += h;
+    }
+    return { rows, cols, total, lt, rt, rib, lh: rows.map((v) => v * scale), rh: cols.map((v) => v * scale) };
+  }
+  const G: Record<string, Geo> = { ordinary: geometry("ordinary"), emergency: geometry("emergency") };
+  let cond = "ordinary", cur: Geo = JSON.parse(JSON.stringify(G.ordinary)), from: Geo | null = null, to: Geo = G.ordinary, t0 = 0, active = -1;
+
+  el("text", { x: X0 + BW, y: 90, class: "h", "text-anchor": "end" }).textContent = "kind on days 0-44";
+  const rightHead = el("text", { x: 975, y: 90, class: "h", "text-anchor": "end" }); rightHead.textContent = "kind in the ordinary fortnight, days 45-59";
+  const ribbons = cur.rib.map((r) => el("path", { class: "ribbon", fill: KC[r.i], opacity: 0.26 }));
+  const lband: Element[] = [], rband: Element[] = [], lname: Element[] = [], lcount: Element[] = [], rcount: Element[] = [], hit: Element[] = [];
+  for (let i = 0; i < n; i++) {
+    lband[i] = el("rect", { x: X0, width: BW, fill: KC[i], class: "band" });
+    rband[i] = el("rect", { x: X1, width: BW, fill: KC[i], class: "band" });
+    lname[i] = el("text", { x: X0 - 14, "text-anchor": "end" }); lname[i].textContent = K[i];
+    lcount[i] = el("text", { x: X0 - 14, "text-anchor": "end", class: "m" });
+    rcount[i] = el("text", { x: X1 + BW + 12, class: "m" });
+    hit[i] = el("rect", { x: 0, width: X0 + BW + 10, class: "hit", tabindex: 0, role: "button", "aria-label": `Follow ${K[i]}` });
+    const pick = () => select(active === i ? -1 : i);
+    hit[i].addEventListener("click", pick);
+    hit[i].addEventListener("keydown", (e) => { const k = (e as KeyboardEvent).key; if (k === "Enter" || k === " ") { e.preventDefault(); pick(); } });
+    rband[i].addEventListener("click", pick);
+  }
+  const path = (r: Rib) => {
+    const xm = (X0 + BW + X1) / 2;
+    return `M ${X0 + BW} ${r.y0a} C ${xm} ${r.y0a}, ${xm} ${r.y1a}, ${X1} ${r.y1a} L ${X1} ${r.y1b} C ${xm} ${r.y1b}, ${xm} ${r.y0b}, ${X0 + BW} ${r.y0b} Z`;
+  };
+  function paint(g: Geo) {
+    g.rib.forEach((r, k) => { ribbons[k].setAttribute("d", path(r)); (ribbons[k] as SVGElement).style.display = r.c > 0 ? "" : "none"; });
+    for (let i = 0; i < n; i++) {
+      lband[i].setAttribute("y", String(g.lt[i])); lband[i].setAttribute("height", String(Math.max(g.lh[i], 0.5)));
+      rband[i].setAttribute("y", String(g.rt[i])); rband[i].setAttribute("height", String(Math.max(g.rh[i], 0.5)));
+      const two = g.lh[i] > 30;
+      lname[i].setAttribute("y", String(g.lt[i] + g.lh[i] / 2 + (two ? -3 : 5)));
+      lcount[i].setAttribute("y", String(g.lt[i] + g.lh[i] / 2 + 15)); (lcount[i] as SVGElement).style.display = two ? "" : "none";
+      lcount[i].textContent = fmt(g.rows[i]) + " people";
+      rcount[i].setAttribute("y", String(g.rt[i] + g.rh[i] / 2 + 5)); rcount[i].textContent = fmt(g.cols[i]);
+      hit[i].setAttribute("y", String(g.lt[i] - 2)); hit[i].setAttribute("height", String(g.lh[i] + 4));
+    }
+  }
+  function lerpG(a: Geo, b: Geo, s: number): Geo {
+    const o: Geo = { rows: [], cols: [], total: a.total + (b.total - a.total) * s, lt: [], rt: [], lh: [], rh: [], rib: [] };
+    for (let i = 0; i < n; i++) for (const k of ["rows", "cols", "lt", "rt", "lh", "rh"] as const) o[k][i] = a[k][i] + (b[k][i] - a[k][i]) * s;
+    a.rib.forEach((r, k) => {
+      const q = b.rib[k];
+      o.rib.push({ i: r.i, j: r.j, c: r.c + (q.c - r.c) * s, y0a: r.y0a + (q.y0a - r.y0a) * s, y0b: r.y0b + (q.y0b - r.y0b) * s, y1a: r.y1a + (q.y1a - r.y1a) * s, y1b: r.y1b + (q.y1b - r.y1b) * s });
+    });
+    return o;
+  }
+  const ease = (s: number) => s < 0.5 ? 4 * s * s * s : 1 - Math.pow(-2 * s + 2, 3) / 2;
+
+  // one dot for every twenty people, travelling along its ribbon
+  const P: { k: number; s: number; u: number; v: number; per: number }[] = [];
+  G.ordinary.rib.forEach((_, k) => {
+    const m = Math.round(Math.max(G.ordinary.rib[k].c, G.emergency.rib[k].c) / 20);
+    for (let q = 0; q < m; q++) P.push({ k, s: Math.random(), u: Math.random(), v: 0.09 + Math.random() * 0.05, per: q });
+  });
+  const ctx = cv.getContext("2d")!;
+  let cw = 0, ch = 0, dpr = 1;
+  function resize() {
+    const r = cv.getBoundingClientRect(); dpr = Math.min(devicePixelRatio || 1, 2);
+    cw = r.width; ch = r.height; cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+  }
+  const bez = (a: number, b: number, c: number, d: number, s: number) => { const u = 1 - s; return u * u * u * a + 3 * u * u * s * b + 3 * u * s * s * c + s * s * s * d; };
+  function drawParticles(g: Geo, dt: number) {
+    ctx.setTransform(dpr * cw / W, 0, 0, dpr * ch / H, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const xm = (X0 + BW + X1) / 2;
+    for (const p of P) {
+      const r = g.rib[p.k];
+      if (p.per * 20 >= r.c) continue;                       // a ribbon that shrank shows fewer dots
+      if (active >= 0 && r.i !== active) continue;
+      p.s += p.v * dt; if (p.s > 1) p.s -= 1;
+      const ya = r.y0a + (r.y0b - r.y0a) * p.u, yb = r.y1a + (r.y1b - r.y1a) * p.u;
+      const x = bez(X0 + BW, xm, xm, X1, p.s), y = bez(ya, ya, yb, yb, p.s);
+      ctx.fillStyle = KC[r.i]; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.arc(x, y, 1.7, 0, 6.2832); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function select(i: number) {
+    active = i;
+    ribbons.forEach((e, k) => { const r = cur.rib[k]; e.setAttribute("opacity", String(active < 0 ? 0.26 : r.i === active ? 0.5 : 0.04)); });
+    for (let j = 0; j < n; j++) {
+      lband[j].setAttribute("opacity", String(active < 0 || j === active ? 1 : 0.25)); lname[j].setAttribute("opacity", String(active < 0 || j === active ? 1 : 0.35));
+      hit[j].setAttribute("aria-pressed", String(j === active));
+    }
+    words();
+  }
+  const pct = (M: number[][], i: number, j: number) => Math.round(100 * M[i][j] / M[i].reduce((a, b) => a + b, 0));
+  function words() {
+    const M = FLOW[cond], o = FLOW.ordinary, e = FLOW.emergency;
+    if (active < 0) {
+      line.innerHTML = `Of <span class="num">${fmt(G[cond].total)}</span> people, <span class="num">${(STILL.ordinary * 100).toFixed(1)}%</span> are still in their kind in the ordinary fortnight and <span class="num">${(STILL.emergency * 100).toFixed(1)}%</span> in the emergency.`;
+      return;
+    }
+    const i = active, others = K.map((_, j) => [j, pct(M, i, j)]).filter(([j]) => j !== i).sort((a, b) => b[1] - a[1]).slice(0, 2);
+    line.innerHTML = `<span style="color:${KC[i]}">&#9632;</span> ${K[i][0].toUpperCase() + K[i].slice(1)}: <span class="num">${pct(o, i, i)}%</span> still ${K[i]} in the ordinary fortnight, <span class="num">${pct(e, i, i)}%</span> in the emergency. In ${DAYS[cond]} <span class="num">${others[0][1]}%</span> became ${K[others[0][0]]} and <span class="num">${others[1][1]}%</span> ${K[others[1][0]]}.`;
+  }
+  function setCond(c: string) {
+    if (c === cond) return;
+    cond = c; from = JSON.parse(JSON.stringify(cur)); to = G[c]; t0 = performance.now();
+    toggles.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.cond === c)));
+    rightHead.textContent = c === "ordinary" ? "kind in the ordinary fortnight, days 45-59" : "kind in the emergency, days 60-74";
+    small.textContent = "still in their kind, " + DAYS[c];
+    words();
+  }
+  let last = performance.now(), shown = STILL.ordinary, running = false, visible = true;
+  function frame(now: number) {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    if (from) {
+      const s = Math.min((now - t0) / 800, 1);
+      cur = lerpG(from, to, ease(s)); paint(cur);
+      shown += (STILL[cond] - shown) * Math.min(1, dt * 6);
+      if (s >= 1) { from = null; cur = JSON.parse(JSON.stringify(to)); shown = STILL[cond]; }
+      big.textContent = (shown * 100).toFixed(1) + "%";
+    }
+    if (!reduced) drawParticles(cur, dt);
+    if (visible && !document.hidden) requestAnimationFrame(frame); else running = false;
+  }
+  function run() { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
+  toggles.forEach((b) => b.addEventListener("click", () => { setCond(b.dataset.cond!); run(); }));
+  addEventListener("resize", resize);
+  resize(); paint(cur); select(-1);
+  if (reduced) drawParticles(cur, 0);
+  // draw only while the figure is on screen and the tab is visible
+  new IntersectionObserver((es) => { visible = es.some((e) => e.isIntersecting); if (visible) run(); }, { rootMargin: "100px" }).observe(fig);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) run(); });
+</script>
+
+<style is:global>
+  .flow-stage { overflow-x: auto; }
+  .flow-svg { display: block; width: 100%; min-width: 40rem; height: auto; }
+  .flow-canvas { position: absolute; inset: 0; width: 100%; min-width: 40rem; height: 100%; pointer-events: none; }
+  .flow-svg text { font-family: var(--sans); font-size: 15px; fill: var(--ink); }
+  .flow-svg text.m { font-family: var(--mono); font-size: 13px; fill: var(--muted); }
+  .flow-svg text.h { font-family: var(--sans); font-size: 12.5px; fill: var(--muted); letter-spacing: 0.02em; }
+  .flow-svg .band { cursor: pointer; }
+  .flow-svg .hit { fill: transparent; cursor: pointer; outline: none; }
+  .flow-svg .hit:focus-visible { stroke: var(--cobalt); stroke-width: 2; }
+  .flow-svg .ribbon { transition: opacity 300ms ease; }
+</style>

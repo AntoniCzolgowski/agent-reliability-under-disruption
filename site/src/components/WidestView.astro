@@ -1,0 +1,180 @@
+---
+// The widest view: the opener of the PCA tab. The 6,000 development people of Figure 5 drawn on two of their fifteen traits, then
+// turned inside the fifteen dimensions until the two components face the screen (the shortest rotation between the two planes, with
+// the frame carried along so that the end shows exactly PC1 across and PC2 up). The counter is the share of the total variance of
+// the fifteen standardised traits that the current projection shows. Data: public/data/pca_people.json from code/export_part2_viz.py,
+// fetched when the figure comes into view.
+import { url } from "../site";
+const alt = "Six thousand people as dots, first drawn on two of their fifteen traits, then turned until they are drawn on the two principal components, where the cloud is widest.";
+---
+
+<figure class="opener" id="turn" data-data-url={url("data/pca_people.json")}>
+  <div class="opener-stage turn-stage">
+    <canvas class="turn-canvas" role="img" aria-label={alt}></canvas>
+    <div class="opener-read" aria-live="polite">
+      <div class="big" id="turn-big">13.3%</div>
+      <div class="small" id="turn-small">of all the variation in the fifteen traits is visible on these two traits</div>
+    </div>
+    <div class="opener-toggle" role="group" aria-label="Colour">
+      <button type="button" data-col="ink" aria-pressed="true">People</button>
+      <button type="button" data-col="kind" aria-pressed="false">By kind</button>
+    </div>
+    <p class="turn-wait" hidden>Loading the 6,000 people.</p>
+  </div>
+  <div class="opener-bar">
+    <button class="opener-play" type="button" aria-label="Play" disabled>
+      <svg class="ic-pause" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1" width="3" height="10" /><rect x="7.5" y="1" width="3" height="10" /></svg>
+      <svg class="ic-play" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" /></svg>
+    </button>
+    <label class="opener-scrub-label"><span class="visually-hidden">Turn from the two traits to the two components</span><input class="opener-scrub" type="range" min="0" max="1000" step="1" value="0" disabled /></label>
+    <label class="opener-pick">across <select class="opener-sel" id="turn-x" disabled></select></label>
+    <label class="opener-pick">up <select class="opener-sel" id="turn-y" disabled></select></label>
+  </div>
+  <p class="opener-note">The 6,000 development people of Figure 5, first drawn on two of their fifteen traits, then turned inside the fifteen dimensions until the two components face the screen. Any two traits alone show about 13% of the variation, two fifteenths, because every standardised trait carries the same share; the two components show 61%, the most any two directions can. Pick other starting traits and it turns again.</p>
+</figure>
+
+<script>
+  interface Cloud { traits: string[]; labels: string[]; components: string[]; evr: number[]; loadings: number[][]; kinds: string[]; n: number; scale: number; kind: number[]; z: number[]; }
+  const KC = ["#2a78d6", "#4a3aa7", "#1baf7a", "#eda100", "#e87ba4", "#eb6834"];
+  const fig = document.getElementById("turn") as HTMLElement;
+  const cv = fig.querySelector<HTMLCanvasElement>(".turn-canvas")!, ctx = cv.getContext("2d")!;
+  const big = fig.querySelector<HTMLElement>("#turn-big")!, small = fig.querySelector<HTMLElement>("#turn-small")!, wait = fig.querySelector<HTMLElement>(".turn-wait")!;
+  const playBtn = fig.querySelector<HTMLButtonElement>(".opener-play")!, scrub = fig.querySelector<HTMLInputElement>(".opener-scrub")!;
+  const selX = fig.querySelector<HTMLSelectElement>("#turn-x")!, selY = fig.querySelector<HTMLSelectElement>("#turn-y")!;
+  const toggles = Array.from(fig.querySelectorAll<HTMLButtonElement>(".opener-toggle button"));
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const W = 1000, H = 620, CX = 530, CY = 318, UNIT = 46, DUR = 8000;     // 46 pixels per standard deviation, one turn in 8 s
+  let D: Cloud, N = 0, T = 15, Z: Float32Array, V1: number[], V2: number[], X: Float32Array, Y: Float32Array;
+  let ix = 6, iy = 0, colour = "ink", t = 0, playing = false, t0 = 0, scrubbing = false, dpr = 1, cw = 0, ch = 0, restart = 0;
+
+  // the turn: the shortest rotation carrying the plane of the two traits onto the plane of the two components, orientation included
+  let turn: { Ap: Float64Array[]; dirs: Float64Array[]; th: number[]; al: number; dlt: number; flip: number };
+  function prepareTurn() {
+    const A = [new Float64Array(T), new Float64Array(T)]; A[0][ix] = 1; A[1][iy] = 1;
+    const B = [Float64Array.from(V1), Float64Array.from(V2)];
+    const M = [[V1[ix], V2[ix]], [V1[iy], V2[iy]]];                                        // A^T B, 2 x 2
+    const a = M[0][0] * M[0][0] + M[1][0] * M[1][0], b = M[0][0] * M[0][1] + M[1][0] * M[1][1], d = M[0][1] * M[0][1] + M[1][1] * M[1][1];
+    const tr = a + d, det = a * d - b * b, disc = Math.sqrt(Math.max(tr * tr / 4 - det, 0));
+    const l = [tr / 2 + disc, tr / 2 - disc];
+    let w1 = Math.abs(b) > 1e-12 ? [b, l[0] - a] : a >= d ? [1, 0] : [0, 1];
+    const nw = Math.hypot(w1[0], w1[1]); w1 = [w1[0] / nw, w1[1] / nw];
+    const Wc = [w1, [-w1[1], w1[0]]];
+    const s = [Math.sqrt(Math.max(l[0], 0)), Math.sqrt(Math.max(l[1], 0))];
+    const U: number[][] = [[0, 0], [0, 0]];
+    for (let k = 0; k < 2; k++) if (s[k] > 1e-9) U[k] = [(M[0][0] * Wc[k][0] + M[0][1] * Wc[k][1]) / s[k], (M[1][0] * Wc[k][0] + M[1][1] * Wc[k][1]) / s[k]];
+    if (s[1] <= 1e-9) U[1] = [-U[0][1], U[0][0]];
+    if (s[0] <= 1e-9) { U[0] = [1, 0]; U[1] = [0, 1]; }
+    const detU = U[0][0] * U[1][1] - U[0][1] * U[1][0], detW = Wc[0][0] * Wc[1][1] - Wc[0][1] * Wc[1][0];
+    if (detU * detW < 0) { U[1] = [-U[1][0], -U[1][1]]; s[1] = -s[1]; }            // same orientation at both ends; one angle may pass 90 degrees
+    const Ap = [0, 1].map((k) => { const v = new Float64Array(T); for (let i = 0; i < T; i++) v[i] = A[0][i] * U[k][0] + A[1][i] * U[k][1]; return v; });
+    const Bp = [0, 1].map((k) => { const v = new Float64Array(T); for (let i = 0; i < T; i++) v[i] = B[0][i] * Wc[k][0] + B[1][i] * Wc[k][1]; return v; });
+    const th = s.map((v) => Math.acos(Math.max(-1, Math.min(1, v))));
+    const dirs = [0, 1].map((k) => {
+      const v = new Float64Array(T), sn = Math.sin(th[k]), cs = Math.cos(th[k]);
+      if (Math.abs(sn) > 1e-6) { for (let i = 0; i < T; i++) v[i] = (Bp[k][i] - cs * Ap[k][i]) / sn; return v; }
+      if (cs > 0) return v;
+      v[(ix + 3) % T] = 1;
+      for (const u of [Ap[0], Ap[1], Bp[0], Bp[1]]) { let dot = 0; for (let i = 0; i < T; i++) dot += v[i] * u[i]; for (let i = 0; i < T; i++) v[i] -= dot * u[i]; }
+      let nn = 0; for (let i = 0; i < T; i++) nn += v[i] * v[i]; nn = Math.sqrt(nn); for (let i = 0; i < T; i++) v[i] /= nn; return v;
+    });
+    const flip = Math.round(detU);
+    const ang = (R: number[][]) => Math.atan2(R[1][0], R[0][0]);
+    const al = ang([[U[0][0], U[1][0] * flip], [U[0][1], U[1][1] * flip]]), be = ang([[Wc[0][0], Wc[1][0] * flip], [Wc[0][1], Wc[1][1] * flip]]);
+    let dlt = be - al; dlt = ((dlt + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    turn = { Ap, dirs, th, al, dlt, flip };
+  }
+  function plane(tt: number) {
+    const { Ap, dirs, th, al, dlt, flip } = turn;
+    const g = [0, 1].map((k) => { const v = new Float64Array(T), c = Math.cos(tt * th[k]), sn = Math.sin(tt * th[k]); for (let i = 0; i < T; i++) v[i] = Ap[k][i] * c + dirs[k][i] * sn; return v; });
+    const an = al + tt * dlt, c = Math.cos(an), sn = Math.sin(an);
+    const a = new Float64Array(T), b = new Float64Array(T);
+    for (let i = 0; i < T; i++) { a[i] = g[0][i] * c + g[1][i] * sn; b[i] = (-g[0][i] * sn + g[1][i] * c) * flip; }
+    return [a, b];
+  }
+  function project(tt: number) {
+    const [a, b] = plane(tt);
+    let sx = 0, sy = 0, sxx = 0, syy = 0;
+    for (let i = 0; i < N; i++) {
+      let x = 0, y = 0; const o = i * T;
+      for (let k = 0; k < T; k++) { x += Z[o + k] * a[k]; y += Z[o + k] * b[k]; }
+      X[i] = x; Y[i] = y; sx += x; sy += y; sxx += x * x; syy += y * y;
+    }
+    const vx = sxx / N - (sx / N) ** 2, vy = syy / N - (sy / N) ** 2;
+    return (vx + vy) / T;                                   // share of the total variance, which is 15 for standardised traits
+  }
+  const ease = (s: number) => s < 0.5 ? 4 * s * s * s : 1 - Math.pow(-2 * s + 2, 3) / 2;
+  function resize() { const r = cv.getBoundingClientRect(); dpr = Math.min(devicePixelRatio || 1, 2); cw = r.width; ch = r.height; cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); draw(); }
+  function label(text: string, x: number, y: number, align: CanvasTextAlign, alpha: number) {
+    if (alpha <= 0.02) return;
+    ctx.globalAlpha = alpha; ctx.fillStyle = "#5b616b"; ctx.font = '400 14px "Chivo Mono", ui-monospace, monospace'; ctx.textAlign = align; ctx.fillText(text, x, y); ctx.globalAlpha = 1;
+  }
+  function draw() {
+    if (!cw || !D) return;
+    const s = ease(t), seen = project(s);
+    ctx.setTransform(dpr * cw / W, 0, 0, dpr * ch / H, 0, 0); ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "#d9dad6"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(40, CY); ctx.lineTo(W - 40, CY); ctx.moveTo(CX, 30); ctx.lineTo(CX, H - 30); ctx.stroke();
+    const e1 = Math.pow(1 - s, 1.5), e2 = Math.pow(s, 1.5);
+    label(D.labels[ix] + " →", W - 44, CY - 8, "right", e1); label("↑ " + D.labels[iy], CX + 8, 44, "left", e1);
+    label(D.components[0] + ", " + Math.round(D.evr[0] * 100) + "% →", W - 44, CY - 8, "right", e2); label("↑ " + D.components[1] + ", " + Math.round(D.evr[1] * 100) + "%", CX + 8, 44, "left", e2);
+    if (colour === "ink") { ctx.fillStyle = "#14161a"; ctx.globalAlpha = 0.28; }
+    for (let i = 0; i < N; i++) {
+      if (colour === "kind") { ctx.fillStyle = KC[D.kind[i]]; ctx.globalAlpha = 0.55; }
+      const x = CX + X[i] * UNIT, y = CY - Y[i] * UNIT;
+      if (x < 2 || x > W - 2 || y < 2 || y > H - 2) continue;
+      ctx.beginPath(); ctx.arc(x, y, 2.1, 0, 6.2832); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    big.textContent = (seen * 100).toFixed(1) + "%";
+    small.textContent = t < 0.02 ? "of all the variation in the fifteen traits is visible on these two traits" : t > 0.98 ? "is visible on the two components, the most any two directions can show" : "of all the variation in the fifteen traits is visible from this angle";
+    if (!scrubbing) scrub.value = String(Math.round(t * 1000));
+  }
+  function setPlaying(p: boolean) { playing = p; playBtn.classList.toggle("is-playing", p); playBtn.setAttribute("aria-label", p ? "Pause" : "Play"); if (p) t0 = performance.now() - t * DUR; }
+  function frame(now: number) {
+    if (playing && !scrubbing) { t = Math.min((now - t0) / DUR, 1); draw(); if (t >= 1) setPlaying(false); }
+    if (playing) requestAnimationFrame(frame);
+  }
+  function chose() { prepareTurn(); t = 0; setPlaying(false); draw(); clearTimeout(restart); if (!reduced) restart = window.setTimeout(() => { setPlaying(true); requestAnimationFrame(frame); }, 900); }
+
+  async function start() {
+    wait.hidden = false;
+    try {
+      D = await (await fetch(fig.dataset.dataUrl!)).json();
+    } catch { wait.textContent = "The figure could not load its data."; return; }
+    wait.hidden = true;
+    N = D.n; T = D.traits.length; V1 = D.loadings[0]; V2 = D.loadings[1];
+    Z = new Float32Array(D.z.length); for (let i = 0; i < Z.length; i++) Z[i] = D.z[i] / D.scale;
+    X = new Float32Array(N); Y = new Float32Array(N);
+    ix = D.traits.indexOf("home_share"); iy = D.traits.indexOf("rg_km");
+    D.traits.forEach((_, i) => { for (const sel of [selX, selY]) { const o = document.createElement("option"); o.value = String(i); o.textContent = D.labels[i]; sel.appendChild(o); } });
+    selX.value = String(ix); selY.value = String(iy);
+    prepareTurn();
+    if (reduced) t = 1;
+    playBtn.disabled = false; scrub.disabled = false; selX.disabled = false; selY.disabled = false;
+    resize();
+    if (!reduced) restart = window.setTimeout(() => { setPlaying(true); requestAnimationFrame(frame); }, 900);
+  }
+  playBtn.addEventListener("click", () => { if (t >= 1) t = 0; setPlaying(!playing); if (playing) requestAnimationFrame(frame); });
+  scrub.addEventListener("pointerdown", () => { scrubbing = true; });
+  scrub.addEventListener("input", () => { t = Number(scrub.value) / 1000; draw(); });
+  scrub.addEventListener("change", () => { scrubbing = false; t = Number(scrub.value) / 1000; draw(); });
+  selX.addEventListener("change", () => { ix = Number(selX.value); if (ix === iy) { iy = (iy + 1) % T; selY.value = String(iy); } chose(); });
+  selY.addEventListener("change", () => { iy = Number(selY.value); if (ix === iy) { ix = (ix + 1) % T; selX.value = String(ix); } chose(); });
+  toggles.forEach((b) => b.addEventListener("click", () => { colour = b.dataset.col!; toggles.forEach((o) => o.setAttribute("aria-pressed", String(o === b))); draw(); }));
+  fig.addEventListener("keydown", (e) => {
+    const tg = e.target as HTMLElement;
+    if (e.code !== "Space" || tg.tagName === "INPUT" || tg.tagName === "SELECT" || (tg.tagName === "BUTTON" && tg !== playBtn)) return;
+    e.preventDefault(); playBtn.click();
+  });
+  addEventListener("resize", resize);
+  document.addEventListener("visibilitychange", () => { if (document.hidden && playing) setPlaying(false); });
+  // the data (about 320 KB) is fetched when the figure approaches the screen
+  const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); start(); } }, { rootMargin: "300px" });
+  io.observe(fig);
+</script>
+
+<style is:global>
+  .turn-stage { overflow-x: auto; }
+  .turn-canvas { display: block; width: 100%; min-width: 40rem; height: auto; aspect-ratio: 1000 / 620; }
+  .turn-wait { position: absolute; left: 1.1rem; bottom: 0.8rem; margin: 0; font: 400 0.85rem/1.4 var(--sans); color: var(--muted); }
+</style>

@@ -4,6 +4,7 @@ description: "Six kinds of movers found without labels in 25,000 people's ordina
 ---
 
 import Figure from "../../components/Figure.astro";
+import KindsFlow from "../../components/KindsFlow.astro";
 import o01 from "../../assets/figures/o01_kmeans_steps.png";
 import o02 from "../../assets/figures/o02_euclidean_vs_cosine.png";
 import o03 from "../../assets/figures/o03_toy_dendrogram.png";
@@ -21,6 +22,8 @@ import f30 from "../../assets/figures/f30_place_rhythms.png";
 import f32 from "../../assets/figures/f32_place_rhythms_emergency.png";
 
 <p class="lede">Nobody in YJMob100K comes with a label saying commuter or homebody. Clustering asks whether such kinds exist anyway, using nothing but how people moved, and this tab then asks whether people still belong to their kind once the emergency starts.</p>
+
+<KindsFlow />
 
 ## Overview
 
