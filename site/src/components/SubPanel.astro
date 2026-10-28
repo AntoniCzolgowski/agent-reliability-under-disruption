@@ -1,0 +1,9 @@
+---
+// One section of a page with SubTabs. Its id must match one of the SubTabs items.
+interface Props { id: string }
+const { id } = Astro.props;
+---
+
+<section class="subpanel" id={id}>
+  <slot />
+</section>

@@ -4,9 +4,148 @@ description: "The research study that grows out of the course project: when a si
 ---
 
 import Figure from "../../components/Figure.astro";
+import SubTabs from "../../components/SubTabs.astro";
+import SubPanel from "../../components/SubPanel.astro";
 import f31 from "../../assets/figures/f31_place_rhythms_vs_foursquare.png";
+import f47 from "../../assets/figures/f47_invisible_breaks.png";
+import f48 from "../../assets/figures/f48_same_break_quieter_signal.png";
+import f49 from "../../assets/figures/f49_own_scale_alarm.png";
+import f50 from "../../assets/figures/f50_independent_check.png";
+import f51 from "../../assets/figures/f51_triage.png";
+import f52 from "../../assets/figures/f52_llm_stand_ins.png";
 
 <p class="lede">I extend this course project with an independent study. First in my line of work on agents as models of how people decide and act.</p>
+
+<SubTabs label="Research sections" items={[{ id: "findings", label: "Findings" }, { id: "study", label: "The study" }, { id: "progress", label: "Progress" }, { id: "limits", label: "Limits" }]} />
+
+<SubPanel id="findings">
+
+<p class="note">What the study has found so far, newest first. The plan behind it is under The study.</p>
+
+<ul class="findings-index">
+<li><a href="#invisible-breaks">Invisible breaks</a><span class="what">An alarm built for everyone sees the broken routines of people with regular weeks and misses most of the others. Judging each person against their own ordinary days more than halves the gap.</span></li>
+<li><a href="#language-model-stand-ins">Language-model stand-ins</a><span class="what">Two language models playing real people from their ordinary weeks could not tell whose routine would break. They expected almost everyone's to.</span></li>
+<li><a href="#reading-anonymous-places-through-named-ones">Reading anonymous places through named ones</a><span class="what">The daily rhythms of anonymous grid squares, read against named Foursquare places.</span></li>
+<li><a href="#signals-for-an-agent-that-updates-itself">Signals for an agent that updates itself</a><span class="what">Two signals an agent could watch to know when its picture of a person is going out of date.</span></li>
+</ul>
+
+## Invisible breaks
+
+The [NaiveBayes](../naivebayes/) tab built an alarm for every person. Each day it adds up how much that person's day looks like the emergency, and it fires when the total crosses a line set so that only 5% of people would trigger it in ordinary times. It caught about a third of the routines that broke, most of them among people with regular weeks. A routine counts as broken when the person's **habit model**, a description of where they usually are at each half hour learned from their ordinary days, became far more surprised by their days in the emergency than chance allows. This finding asks about the breaks the alarm missed: whose broken routine an alarm can see, why some breaks stay invisible, what a fairer alarm changes and what no alarm of this kind can fix.
+
+The political scientist James C. Scott argued in *Seeing Like a State* (1998) that a state sees best what it has made legible, the lives that fit its grid. An alarm built on the average person is such a grid. The analysis uses the 7,135 evaluation people of the course tabs, people who were never used to fit anything, sorted into five equal groups, or fifths, by **regularity**: the share of workdays on which they spent the middle of the day at their usual daytime place.
+
+### Everyone's routine can break, but the alarm sees mostly the regular
+
+Routines broke in every fifth: in 13.0% of the least regular people and 30.0% of the most regular. The alarm saw very different shares of those breaks (Figure 1). It flagged 4.3% of the breaks in the least regular fifth, then 17.4%, 24.6% and 44.8%, and 59.5% in the most regular fifth. By kind of mover it saw 75.5% of weekend movers' breaks and 64.1% of regular commuters', but 7.7% of mid-range movers' and 6.5% of far roamers'. Most breaks among people who live irregularly happened without the alarm ever firing.
+
+<Figure n={1} title="Invisible breaks" src={f47} alt="Two bar charts of the percentage of people whose routine broke, each bar split into a hatched part for breaks never flagged and a filled part for breaks flagged by the alarm. By fifth of regularity, from least to most regular, the whole bars are about 13, 16, 16, 20 and 30 percent, and the labels say 4, 17, 25, 45 and 59 percent seen. By kind of mover, the labels say far roamers 7 percent seen, mid-range movers 8, regular commuters 64, local regulars 40, weekend movers 76 and homebodies 26 percent.">
+The share of people whose routine broke (whole bars) and the part of those breaks the alarm flagged (filled), by fifth of regularity (left) and by kind of mover (right). The alarm sees most breaks among regular people and few among irregular ones.
+</Figure>
+
+### The same break, a quieter signal
+
+Irregular people's breaks are not smaller. Measured by the habit model, the typical rise in surprise is 0.31 in the least regular fifth and 0.37 in the most regular (Figure 2, left). What differs is how far a break moves the daily evidence the alarm adds up, compared with how much that evidence wobbles on ordinary days. The ratio of the two is called d′ (d-prime), a measure from signal detection theory of how far a signal stands out from noise. For people whose routine broke, the typical d′ is 0.46 in the least regular fifth and 1.06 in the most regular (centre).
+
+From d′ follows how many days of evidence it takes to tell a shift of that size from ordinary wobble, accepting a 5% chance of a false alarm and aiming to catch 80% of real shifts: about 29 days in the least regular fifth, 42 in the second, 25 in the third, 12 in the fourth and 5.5 in the most regular (right). The emergency lasted 15 days. Only 40% of the breaks in the least regular fifth could have become visible within it, against 71% in the most regular. And for more than a quarter of the breaks in each of the three least regular fifths, d′ is zero or below: the break did not move the evidence toward the emergency at all, so no amount of waiting would reveal it to this alarm.
+
+<Figure n={2} title="Same break, quieter signal" src={f48} alt="Three panels for people whose routine broke, by fifth of regularity, with a dot for the median and a grey bar for the middle half. Left: the rise in surprise per seen half hour, medians between 0.29 and 0.37 in every fifth. Centre: d prime, the emergency shift divided by the ordinary wobble, medians 0.46, 0.38, 0.50, 0.73 and 1.06 from least to most regular, with the bars of the three least regular fifths reaching below zero. Right: days of evidence needed on a log scale, medians about 29, 42, 25, 12 and 5.5, a dashed red line at 15 days labelled the emergency lasted 15 days, the bars of the three least regular fifths reaching the top of the scale labelled 1,000 or never, and the share visible within the 15 days written above: 40, 37, 41, 55 and 71 percent.">
+For people whose routine broke, by fifth of regularity: the size of the break (left), how far it moved their daily evidence relative to its ordinary wobble (centre) and how many days of evidence it would take to see (right, on a log scale). The break is about as large in every fifth, but among irregular people it is quieter and often needs longer than the emergency lasted.
+</Figure>
+
+### A fairer alarm
+
+Part of the blindness comes from the alarm's design. It measures everyone on one scale, so a person whose ordinary days wobble a lot needs a large shift to cross the line. An alarm that judges each person against their own ordinary variability, measured on their days 0 to 29, works on the person's own scale. It flags 31.7% of the breaks in the least regular fifth instead of 4.3%, and 39.8% of all breaks instead of 35.8%, while it fires a little less often on ordinary days: for 4.0% of people on days 45 to 59, against 4.8% (Figure 3).
+
+The fairness criterion called equal opportunity ([Hardt, Price and Srebro, 2016](https://arxiv.org/abs/1610.02413)) asks that the people who need to be found have the same chance of being found, whatever group they belong to. Here those are the people whose routine broke, and the groups are the fifths of regularity. With one scale for everyone, the best-seen fifth has its breaks found 55 percentage points more often than the worst-seen fifth. On each person's own scale the gap is 23 points. The most regular fifth pays a little for it: 52.0% of its breaks are flagged instead of 59.5%.
+
+<Figure n={3} title="Part of the blindness is the alarm's design" src={f49} alt="Two grouped bar charts by fifth of regularity, grey bars for one scale for everyone and blue bars for each person on their own scale. Left: the percentage of broken routines flagged during the emergency, 4 against 32 percent in the least regular fifth, then 17 against 29, 25 against 34, 45 against 40, and 59 against 52 percent in the most regular fifth. Right: the percentage of people flagged on the ordinary days 45 to 59, between 0 and 9 percent for one scale and between 2 and 6 percent for the own scale.">
+The share of broken routines flagged (left) and of people falsely flagged on the ordinary days 45 to 59 (right), by fifth of regularity, with one scale for everyone and with each person on their own scale. The own scale lifts the least regular fifth from 4% to 32% and lowers the false alarms where they were highest.
+</Figure>
+
+### The blind spot belongs to the detector
+
+What remains invisible could be missing from the data, or missing from what the alarm looks at. A check answers this. Chronos-2, a forecasting model pretrained on other time series and used on the NaiveBayes tab, asks only whether a person's days stopped following that person's own past. It does not ask whether they changed the way most people changed. Within each fifth, its forecast error tells broken routines from held ones with an AUC of 0.82 in the least regular fifth and between 0.75 and 0.77 in the others (Figure 4). The habit evidence that the alarm adds up does this only weakly in the least regular fifth (AUC 0.61) and well in the most regular (0.84). So irregular people's breaks are in the data. They were different from the change most people made, and that common change is what the alarm's evidence measures.
+
+<Figure n={4} title="The blind spot belongs to the detector" src={f50} alt="Line chart of AUC in percent within each fifth of regularity, with a dashed line at 50 labelled no better than chance. Habit evidence on one scale, grey, and on the own scale, blue, rise together from about 61 in the least regular fifth to 59, 62, 71 and 84 in the most regular fifth. Chronos-2 forecast error, green, is highest in the least regular fifth at about 82 and stays between about 75 and 77 in the other fifths.">
+The AUC for telling broken from held routines within each fifth of regularity: the habit evidence on one scale and on each person's own scale, and Chronos-2's forecast error. The habit evidence is weak for the least regular people, while Chronos-2 sees their breaks best.
+</Figure>
+
+### Whom to check first
+
+Suppose a city can afford to check on one person in five during an emergency, for example by asking them or by updating their simulated stand-in with fresh data. Whom should it pick? Ranking people by their risk from ordinary days alone, as the pretrained TabPFN-3.5 model of the [DecTrees](../dectrees/) tab estimates it, finds 35.1% of all broken routines but only 4.6% of those in the two least regular fifths, because ordinary-day risk is highest for regular people. Ranking by the evidence of the first emergency days does better. By day 62, the evidence on each person's own scale finds 43.3% of all breaks and 31.2% of the breaks in the two least regular fifths, against 18.8% for the same evidence on one scale (Figure 5, left).
+
+A city could also keep part of the budget for the least regular two fifths. Up to 30% of the budget, that costs nothing at all on day 62. Beyond it, it trades breaks found overall for breaks found among them: with 60% kept for them, 43.2% of their breaks are found and the total falls from 43.3% to 36.6% (right). [Bertsimas, Farias and Trichakis (2011)](https://doi.org/10.1287/opre.1100.0865) call such a trade the price of fairness. Here a moderate reserve comes free.
+
+<Figure n={5} title="Whom to check first" src={f51} alt="Two panels. Left: the percentage of broken routines found by re-checking 20 percent of people, against the decision day from 60 to 74. Ordinary-day risk only is flat at 35 percent. Evidence on one scale and on the own scale rise from about 39 to 41 percent on day 60 to about 46 to 48 percent on day 74. Own scale with the budget split evenly by regularity rises from about 37 to 45 percent. A dotted line at 20 percent marks chance. Right: on day 62, the percentage found against the share of the budget kept for the two least regular fifths, from 0 to 60 percent. All breaks stay at 43 percent up to 30 percent kept and fall to 37 percent at 60. Breaks of the least regular stay at 31 percent and rise to 43 percent. Breaks of the most regular stay at 59 percent and fall to 42 percent.">
+Left: the share of broken routines found by checking 20% of people, chosen by ordinary-day risk or by the evidence up to each decision day. Right: on day 62, what keeping part of the budget for the two least regular fifths does to the breaks found among them, among the most regular and in total.
+</Figure>
+
+### What it means
+
+Five rules follow, in plain words.
+
+1. Irregular lives break less often, but when they break, the break is as large and much quieter.
+2. An alarm built for everyone sees what its scale makes legible, which is the change made by regular people.
+3. Judging each person against their own ordinary days more than halves the gap in who gets seen, with no more false alarms.
+4. What stays invisible is the blind spot of the detector, not of the data: a forecaster of each person's own past sees those breaks.
+5. Checking people by early evidence finds more breaks than checking them by their risk in ordinary times, and a moderate reserve for the least legible costs nothing.
+
+For the study this matters directly. Study 4 will let an agent learn when to update itself, and an update rule learned on the average person would inherit the alarm's blind spot unless it judges each person on their own scale. For simulations of a city in a crisis, it means that the people whose simulated stand-ins fail without anyone noticing are the people whose lives were least like the average to begin with.
+
+## Language-model stand-ins
+
+Researchers increasingly use large language models as stand-ins for real people: a model is told about a person and asked how that person would act. The [Introduction](../introduction/) discusses how faithful such stand-ins can be. Could one have known whose routine would break? Each of the 7,135 evaluation people was turned into a short persona written only from their ordinary weeks, days 0 to 44: how often they were at home, when they were out on workdays, how regularly they went to their daytime place and how far it was, how far they ranged, and whether they went out more at weekends. Nothing from the emergency was included, and neither the person's kind of mover nor any place that could be located. Here is what one model read for one person:
+
+<blockquote class="prompt">
+<p>Here is how you have lived over the last six weeks, from the location records of your phone:</p>
+<ul>
+<li>About 19% of the times your location was recorded, you were at home.</li>
+<li>On workdays you were away from home 98% of the time between 7 and 9 am, 97% between 10 am and 4 pm, and 87% between 6 and 10 pm.</li>
+<li>On 17% of workdays you spent the middle of the day at your usual daytime place, 19.2 km from home.</li>
+<li>You usually moved within about 23.2 km and passed through about 6 different 500-metre squares a day.</li>
+<li>On weekends you were away from home less often than on workdays.</li>
+</ul>
+<p>Tomorrow an emergency begins in your city and will last about two weeks. You do not know yet what kind of emergency it is. Will your daily routine, meaning where you are at each time of the day, change noticeably compared with the last six weeks?</p>
+<p>Answer with Yes or No only.</p>
+</blockquote>
+
+Two models answered as the person. [Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B) is a general-purpose language model. [Minitaur-8B](https://huggingface.co/marcelbinz/Llama-3.1-Minitaur-8B) is the small sibling of Centaur, a model fine-tuned on about ten million choices that people made in psychology experiments in order to predict how people decide ([Binz et al., 2025](https://doi.org/10.1038/s41586-025-09215-4)). Neither was allowed to write an answer. The probability of "yes" was read directly from the probabilities each model gave to its next word. For the person above, whose routine did break, Qwen3-8B said yes with probability 95% and Minitaur-8B with 68%. For a person in the [sample](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-3/data/samples/llm_personas_sample.csv) whose routine held, they said 97% and 65%.
+
+Neither model could tell whose routine would break (Figure 6). Qwen3-8B ranks a person who broke above a person who held 53.5% of the time (AUC 0.535), and Minitaur-8B 49.9%, a coin flip. A single number from the person's own data, their regularity, does better (0.601), and the pretrained tabular model of the DecTrees tab better still (0.665). The reason shows in what the stand-ins expect. Qwen3-8B says yes for almost everybody, 95% on average, and Minitaur-8B 67%, while in reality 19% of routines broke. And their answers barely move with regularity: Qwen3-8B's average stays between 95% and 96% in every fifth and Minitaur-8B's at 67%, while the share that really broke climbs from 13% to 30%.
+
+<Figure n={6} title="Language-model stand-ins against the data" src={f52} alt="Two panels. Left: AUC in percent for telling who broke, with 95 percent intervals: regularity alone 60.1, the tabular model of notebook 05 66.5, the Qwen3-8B stand-in 53.5 and the Minitaur-8B stand-in 49.9, with a dashed line at 50. Right: by fifth of regularity, bars for the share that really broke, 13, 16, 16, 20 and 30 percent, under two flat lines for the stand-ins' average probability of yes, Qwen3-8B near 95 to 96 percent and Minitaur-8B near 67 percent.">
+Left: the AUC for telling who broke, with 95% intervals, for regularity alone, the pretrained tabular model and the two language-model stand-ins. Right: the stand-ins' average probability of "yes" by fifth of regularity, above the share whose routine really broke; the stand-ins give nearly everyone the same answer.
+</Figure>
+
+Built from a person's ordinary weeks, these stand-ins describe a crisis in general, in which everyone changes, rather than the person in front of them. Their answers sound plausible and carry almost no information about who will change. This is the gap between believable and faithful behaviour that the Introduction describes, measured on real people. The test has clear limits: one prompt, and two models of 8 billion parameters used without examples or fine-tuning. Larger models, other prompts or richer personas may do better, and that is worth testing next.
+
+## Reading anonymous places through named ones
+
+YJMob100K counts 85 categories of places in every cell but does not say what the categories are, so a cell full of category 59 could be offices, homes or bars. Study 1 asks whether the kind of place can be read from when people are there. The first step was done this month.
+
+- **The rhythm of a cell.** For every cell with at least 500 records on days 0-59, the share of its records in each half hour, on workdays and on rest days separately. The size of the crowd is divided out, so only the timing remains.
+- **Five rhythm types.** K-means sorted the 11,858 cells into five types, named by the hour at which they are busiest on a workday: 8 am, noon, 5 pm, 6 pm and 8 pm (the Clustering tab shows them). The cells form a gradient rather than separate groups, so the types describe the range of rhythms more than they find natural kinds.
+- **A named mirror.** Foursquare check-ins from Tokyo carry the name of the place, folded into eight groups such as Transit, Food or Work and Institutions. The same rhythm was built for each group.
+- **The comparison.** Each side minus its own average rhythm, then the cosine similarity between every YJMob type and every Foursquare group. Without subtracting the average every pair looks alike (0.42 to 0.96), because all places share the basic shape of a day.
+
+<Figure n={7} title="YJMob place rhythms against Foursquare place groups" src={f31} alt="Heat map with five rows for the YJMob rhythm types, peak 08:00, 12:00, 17:00, 18:00 and 20:00, and eight columns for the Foursquare groups from Transit to Home, coloured from blue for minus 1 to red for plus 1. The strongest match in each row is in bold: Work and Institutions 0.71 for peak 08:00, Work and Institutions 0.83 for peak 12:00, Shopping and Services 0.54 for peak 17:00, Nightlife 0.88 for peak 18:00, Home 0.76 for peak 20:00.">
+How closely the daily rhythm of each YJMob type of cell follows the rhythm of each Foursquare place group, after removing each source's average day, from -1 (opposite) to 1 (same shape). The closest group in each row is in bold.
+</Figure>
+
+What came out is a consistent picture. The noon cells and the 8 am cells look like Work and Institutions (0.83 and 0.71), the 5 pm cells like Shopping and Services (0.54), the 6 pm cells like Nightlife (0.88) and the 8 pm cells like Home (0.76). The busiest-at-noon type is also the one that lost the most records in the emergency, 15% on workdays, which fits a workplace that fewer people came to.
+
+What it does not show is just as important. A rhythm says when people are in a cell, not what the cell contains, and the two sources record people differently: YJMob records a phone, Foursquare a person who chose to check in, which is why evening leisure and home look so alike here. The check-ins come from another provider and from 2012-13, and the two grids are never aligned on a map. The labels above are inferred and reported as such; they are not names the dataset contains, and no attempt is made to identify the city.
+
+Next comes the harder step of the study: estimating a rhythm for each of the 85 categories separately, by treating a cell's rhythm as a mix of the rhythms of the places it holds, and testing the method first on Foursquare with the names hidden, where the right answer is known.
+
+## Signals for an agent that updates itself
+
+Study 4 asks whether an agent can learn when to update its picture of a person. That needs a signal it could watch. The PCA tab measured two on real data: how far a person's fortnight sits from the centre of their own kind of mover, and how much of it the five frozen components cannot reconstruct. Both grow in the emergency (median 2.81 to 3.15 and 1.65 to 1.80) and grow most for regular commuters. They will be among the candidate inputs when the update agent is built in November.
+
+</SubPanel>
+
+<SubPanel id="study">
 
 ## The question
 
@@ -22,45 +161,35 @@ The course tabs build the standard ML models on this data. The research asks a a
 
 *Study 4, a learned update schedule (RL extension).* Study 3 fixes when an agent is updated. Study 4 lets an agent learn it. Under a budget of k updates, an agent sees a small state each day, yesterday's error, its trend, updates left and the weekly phase, and chooses to keep or to update. The reward is the negative prediction error, scored by replaying the recorded observations. Tabular Q-learning written from scratch in NumPy, trained on pre-emergency days only, frozen before day 60, and compared under the same budget with never updating, updating on the first k days, the most recent k days, and a threshold rule. If the threshold rule is enough, that is the finding.
 
+</SubPanel>
+
+<SubPanel id="progress">
+
 ## Progress
 
-<p class="note">Updated October 2026, after Part 2 of the course project.</p>
+<p class="note">Updated October 2026, after Part 3 of the course project.</p>
 
 <div class="table-scroll">
 <table>
 <thead><tr><th>Study</th><th>Where it stands</th><th>See</th></tr></thead>
 <tbody>
-<tr><td>1. Place semantics</td><td>First step done: the daily rhythms of 11,858 anonymous cells read against named Foursquare places</td><td>Below</td></tr>
-<tr><td>2. Behaviour change</td><td>Six kinds of movers found and tested in the emergency; 74% keep their kind in an ordinary fortnight, 59% in the emergency</td><td><a href="../clustering/">Clustering</a>, <a href="../pca/">PCA</a></td></tr>
-<tr><td>3. Reliability</td><td>The groups that results will be reported by are fixed: the six kinds, frozen on days 0-44</td><td>Next</td></tr>
-<tr><td>4. Update schedule</td><td>Two candidate signals for when an agent should update itself measured on real data</td><td>Below</td></tr>
+<tr><td>1. Place semantics</td><td>First step done: the daily rhythms of 11,858 anonymous cells read against named Foursquare places</td><td><a href="#reading-anonymous-places-through-named-ones">Findings</a></td></tr>
+<tr><td>2. Behaviour change</td><td>Six kinds of movers found and tested in the emergency; 74% keep their kind in an ordinary fortnight, 59% in the emergency. About one routine in five broke in the emergency, against one in twenty between two ordinary fortnights, regular commuters' most often</td><td><a href="../clustering/">Clustering</a>, <a href="../pca/">PCA</a>, <a href="../naivebayes/">NaiveBayes</a></td></tr>
+<tr><td>3. Reliability</td><td>The simplest agent, a habit model for each person, built and tested. How well it describes a person in ordinary times does not predict how it holds up in the emergency: the agents of the most regular people failed most often</td><td><a href="../dectrees/">DecTrees</a>, <a href="#invisible-breaks">Findings</a></td></tr>
+<tr><td>4. Update schedule</td><td>Two candidate signals measured on real data. The baseline it will be compared with, an alarm set on ordinary days, is built, and its blind spot for people with irregular weeks measured</td><td><a href="#signals-for-an-agent-that-updates-itself">Findings</a></td></tr>
+<tr><td>Language-model stand-ins</td><td>Two language models of 8 billion parameters, playing real people from their ordinary weeks, could not tell whose routine would break</td><td><a href="#language-model-stand-ins">Findings</a></td></tr>
 </tbody>
 </table>
 </div>
 
-### Reading anonymous places through named ones
+</SubPanel>
 
-YJMob100K counts 85 categories of places in every cell but does not say what the categories are, so a cell full of category 59 could be offices, homes or bars. Study 1 asks whether the kind of place can be read from when people are there. The first step was done this month.
-
-- **The rhythm of a cell.** For every cell with at least 500 records on days 0-59, the share of its records in each half hour, on workdays and on rest days separately. The size of the crowd is divided out, so only the timing remains.
-- **Five rhythm types.** K-means sorted the 11,858 cells into five types, named by the hour at which they are busiest on a workday: 8 am, noon, 5 pm, 6 pm and 8 pm (the Clustering tab shows them). The cells form a gradient rather than separate groups, so the types describe the range of rhythms more than they find natural kinds.
-- **A named mirror.** Foursquare check-ins from Tokyo carry the name of the place, folded into eight groups such as Transit, Food or Work and Institutions. The same rhythm was built for each group.
-- **The comparison.** Each side minus its own average rhythm, then the cosine similarity between every YJMob type and every Foursquare group. Without subtracting the average every pair looks alike (0.42 to 0.96), because all places share the basic shape of a day.
-
-<Figure n={1} title="YJMob place rhythms against Foursquare place groups" src={f31} alt="Heat map with five rows for the YJMob rhythm types, peak 08:00, 12:00, 17:00, 18:00 and 20:00, and eight columns for the Foursquare groups from Transit to Home, coloured from blue for minus 1 to red for plus 1. The strongest match in each row is in bold: Work and Institutions 0.71 for peak 08:00, Work and Institutions 0.83 for peak 12:00, Shopping and Services 0.54 for peak 17:00, Nightlife 0.88 for peak 18:00, Home 0.76 for peak 20:00.">
-How closely the daily rhythm of each YJMob type of cell follows the rhythm of each Foursquare place group, after removing each source's average day, from -1 (opposite) to 1 (same shape). The closest group in each row is in bold.
-</Figure>
-
-What came out is a consistent picture. The noon cells and the 8 am cells look like Work and Institutions (0.83 and 0.71), the 5 pm cells like Shopping and Services (0.54), the 6 pm cells like Nightlife (0.88) and the 8 pm cells like Home (0.76). The busiest-at-noon type is also the one that lost the most records in the emergency, 15% on workdays, which fits a workplace that fewer people came to.
-
-What it does not show is just as important. A rhythm says when people are in a cell, not what the cell contains, and the two sources record people differently: YJMob records a phone, Foursquare a person who chose to check in, which is why evening leisure and home look so alike here. The check-ins come from another provider and from 2012-13, and the two grids are never aligned on a map. The labels above are inferred and reported as such; they are not names the dataset contains, and no attempt is made to identify the city.
-
-Next comes the harder step of the study: estimating a rhythm for each of the 85 categories separately, by treating a cell's rhythm as a mix of the rhythms of the places it holds, and testing the method first on Foursquare with the names hidden, where the right answer is known.
-
-### Signals for an agent that updates itself
-
-Study 4 asks whether an agent can learn when to update its picture of a person. That needs a signal it could watch. The PCA tab measured two on real data: how far a person's fortnight sits from the centre of their own kind of mover, and how much of it the five frozen components cannot reconstruct. Both grow in the emergency (median 2.81 to 3.15 and 1.65 to 1.80) and grow most for regular commuters. They will be among the candidate inputs when the update agent is built in November.
+<SubPanel id="limits">
 
 ## Limits
 
 One emergency in one undisclosed city, so nothing transfers to emergencies in general. The study does not try to identify the city or any person, and it does not align the grid with a map. Results that go against the hypotheses will be reported like any others.
+
+The findings of October 2026 add limits of their own. Whether a routine broke is measured against one simple habit model, so for people it described poorly the label is noisier; the share that broke is the same for people who are recorded rarely and often, which suggests that recording is not what drives it. The alarms were set on ordinary days and tested on the emergency of the same evaluation people, so their numbers come from one emergency and one group of people. The language-model test used one prompt and two small models without examples. The code, seeds and logs behind every number are linked from the course tabs.
+
+</SubPanel>

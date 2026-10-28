@@ -95,7 +95,7 @@ ol > li::marker { font-family: var(--mono); font-size: 0.85em; color: var(--mute
 
 code, kbd, .num { font-family: var(--mono); font-size: 0.88em; font-variant-numeric: tabular-nums; }
 
-.table-scroll { overflow-x: auto; }
+.table-scroll { overflow-x: auto; margin-bottom: 1.6rem; }
 table { border-collapse: collapse; font: 0.85rem/1.4 var(--mono); font-variant-numeric: tabular-nums; }
 th, td { text-align: left; padding: 0.45rem 1rem 0.45rem 0; border-bottom: 1px solid var(--rule); }
 th { font-family: var(--sans); font-weight: 500; }
@@ -215,3 +215,38 @@ span.todo { border-left: 0; padding: 0; }
   .opener-toggle button { padding: 0.45rem 0.6rem; font-size: 0.76rem; }
   .flow-svg text.h { display: none; }
 }
+
+/* Tabs inside a page (Research). Styled like the site navigation: the current tab carries a 2px ink underline.
+   Without JavaScript the tabs are plain links and every section shows in order. */
+.subtabs { margin: 2.8rem 0 0; font: 400 0.95rem/1.2 var(--sans); }
+main > .subtabs { max-width: var(--wide); }
+.subtabs-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 0 1.9rem; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--rule); }
+.subtabs-list::-webkit-scrollbar { display: none; }
+.subtabs-list li { margin: 0; flex: none; }
+.subtabs a { display: block; padding: 0.8rem 0 0.75rem; color: var(--ink); text-decoration: none; border-bottom: 2px solid transparent; }
+.subtabs a:hover { border-bottom-color: var(--rule); }
+.subtabs a[aria-selected="true"] { border-bottom-color: var(--ink); font-weight: 500; }
+.subtabs a:focus-visible { outline-offset: -2px; }
+.has-subtabs .subtabs { position: sticky; top: 0; z-index: 5; background: var(--ground); }
+html.has-subtabs { scroll-padding-top: 4.6rem; }
+main > .subpanel { max-width: var(--wide); }
+.subpanel > * { max-width: var(--measure); }
+.subpanel > figure, .subpanel > .table-scroll { max-width: var(--wide); }
+.subpanel > figure.small { max-width: var(--measure); }
+.has-subtabs .subpanel > :first-child { margin-top: 2.2rem; }
+.has-subtabs .subpanel > h2:first-child { border-top: 0; padding-top: 0; }
+@media (max-width: 47.99rem) { .subtabs-list { gap: 0 1.25rem; } .subtabs { font-size: 0.92rem; } }
+
+/* Research: the list of findings at the top of the Findings tab */
+.findings-index { list-style: none; padding: 0; margin: 1.4rem 0 2.6rem; border-top: 1px solid var(--rule); }
+.findings-index li { margin: 0; padding: 0.95rem 0 1rem; border-bottom: 1px solid var(--rule); }
+.findings-index a { font: 500 1.05rem/1.3 var(--sans); }
+.findings-index .when { font: 400 0.8rem/1 var(--mono); color: var(--muted); margin-left: 0.7rem; white-space: nowrap; }
+.findings-index .what { display: block; margin-top: 0.3rem; font-size: 0.95em; line-height: 1.5; }
+
+/* A prompt given to a model, quoted as data */
+blockquote.prompt { margin: 1.6rem 0 1.8rem; padding: 0.2rem 0 0.2rem 1.1rem; border-left: 1px solid var(--ink); font: 400 0.86rem/1.6 var(--mono); color: var(--ink); }
+blockquote.prompt p, blockquote.prompt ul { margin: 0 0 0.6rem; }
+blockquote.prompt ul { padding-left: 1.1rem; }
+blockquote.prompt li { margin-bottom: 0.2rem; }
+blockquote.prompt :last-child { margin-bottom: 0; }

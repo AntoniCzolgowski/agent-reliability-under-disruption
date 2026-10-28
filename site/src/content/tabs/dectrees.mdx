@@ -1,0 +1,171 @@
+---
+title: "DecTrees"
+description: "Could ordinary days have told us whose routine would break in the emergency? Three decision trees, the many trees that fit the same data, and three pretrained models as a check."
+---
+
+import Figure from "../../components/Figure.astro";
+import o09 from "../../assets/figures/o09_tree_partition.png";
+import o10 from "../../assets/figures/o10_impurity.png";
+import t14 from "../../assets/figures/t14_tree_people.png";
+import t15 from "../../assets/figures/t15_tree_features.png";
+import t16 from "../../assets/figures/t16_tree_split.png";
+import t18 from "../../assets/figures/t18_tree_test_people.png";
+import f40 from "../../assets/figures/f40_tree_confusion.png";
+import f41 from "../../assets/figures/f41_tree_depth2.png";
+import f42 from "../../assets/figures/f42_tree_tuned.png";
+import f43 from "../../assets/figures/f43_pruning_and_many_trees.png";
+import f44 from "../../assets/figures/f44_who_breaks.png";
+import f46 from "../../assets/figures/f46_tabular_fm.png";
+
+<p class="lede">In the emergency, about one person in five stopped following the routine of their ordinary weeks. This tab asks whether those ordinary weeks gave any warning of who it would be. Decision trees look for simple questions that sort the people whose routine broke from the people whose routine held, and the question they keep coming back to is a surprise.</p>
+
+## Overview
+
+A decision tree predicts by asking a short series of yes-or-no questions, each one chosen according to the answer to the one before. Is this person's regularity above 0.7? If yes, do they travel more than 600 m to their daytime place? Each question splits the examples into two groups, and the questions are drawn like an upside-down tree. The first question at the top is the root, every question is a node, and every group at the end of a path is a leaf that holds the prediction, usually the class that most of its training examples belong to. Trees are used where a decision has to be explained: deciding who gets a loan, sorting patients in an emergency room, finding the fault in a machine or choosing which customers to call first. A person can read a small tree and check every step, and that is its main strength.
+
+Every question looks at one feature and cuts it at one value. So a tree divides the space of all features into boxes, and every box gets one answer (Figure 1). Two questions make three boxes in the example; deeper trees make smaller and more numerous boxes.
+
+<Figure n={1} title="A decision tree asks one question at a time" src={o09} alt="Two panels with toy data. Left: 260 points on two features x1 and x2, blue for held and orange for broke, with a vertical line at x1 equal to 0.6 and a horizontal line at x2 equal to 0.35 to the right of it; the upper right box, shaded, holds mostly orange points. Right: the same splits drawn as a tree. The root asks x1 above 0.6, 260 people, 38 percent broke. No leads to a leaf held with 152 people, 16 percent broke. Yes leads to the question x2 above 0.35, 108 people, 69 percent broke, which ends in a leaf held with 37 people, 32 percent broke, and a leaf broke with 71 people, 89 percent broke.">
+Two questions cut a plane of toy data into three boxes (left), and the same questions drawn as a tree (right). Each leaf predicts the class that most of its training examples belong to.
+</Figure>
+
+A tree is **trained** from the top down. At the root, the algorithm tries every feature and every possible cut and keeps the question that best separates the classes. Then it repeats the same search inside each of the two new groups, and so on, until a group is pure, too small to split or a chosen depth is reached. The search is greedy: each question is the best one at that moment, without looking ahead to later questions. To **predict**, a new example starts at the root, follows its own answers down to a leaf and receives that leaf's class. The share of training examples of each class in the leaf can also be read as a probability.
+
+"Best separates" needs a measure of how mixed a group is, called **impurity**. Let p be the share of a group that belongs to one class, here the share whose routine broke. **Gini impurity** is 1 − p² − (1 − p)²: the chance that two examples drawn at random from the group belong to different classes. It is 0 for a pure group and 0.5 for a group split 50:50. **Entropy** is −p log₂ p − (1 − p) log₂ (1 − p), measured in bits: how much information is still missing to know an example's class. It is 0 for a pure group and 1 for a 50:50 group (Figure 2, left). A split is judged by how much it lowers impurity. The impurity after a split is the average of the two new groups' impurities, each weighted by its share of the examples, and the drop from before to after is called the **information gain** when entropy is used. The tree takes the question with the largest gain. Gini and entropy nearly always pick the same questions, and Gini is slightly faster to compute.
+
+Here is one split worked by hand on this tab's training people (Figure 2, right): is a person's regularity, the share of workdays they spent at their usual daytime place, above 0.71?
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Group</th><th>People</th><th>Broke</th><th>Share broke</th><th>Entropy (bits)</th><th>Gini</th></tr></thead>
+<tbody>
+<tr><td>All training people</td><td>16,769</td><td>3,226</td><td>0.19238</td><td>0.70642</td><td>0.31074</td></tr>
+<tr><td>Regularity at most 0.71</td><td>11,896</td><td>1,862</td><td>0.15652</td><td>0.62593</td><td>0.26405</td></tr>
+<tr><td>Regularity above 0.71</td><td>4,873</td><td>1,364</td><td>0.27991</td><td>0.85533</td><td>0.40312</td></tr>
+<tr><td>After the split, weighted</td><td>16,769</td><td></td><td></td><td>0.69259</td><td>0.30446</td></tr>
+</tbody>
+</table>
+</div>
+
+For all training people the share who broke is p = 3,226 / 16,769 = 0.19238, so entropy is −0.19238 × log₂ 0.19238 − 0.80762 × log₂ 0.80762 = 0.70642 bits, and Gini is 1 − 0.19238² − 0.80762² = 0.31074. The two groups after the split are worked out the same way. Weighted by their sizes, their entropy is (11,896 × 0.62593 + 4,873 × 0.85533) / 16,769 = 0.69259 bits. The information gain is 0.70642 − 0.69259 = 0.01383 bits, and Gini drops by 0.31074 − 0.30446 = 0.00628. The gain is small: knowing whether someone's regularity is above 0.71 says only a little about whether their routine will break. The group above 0.71 is even more mixed than the starting group, because 28% is closer to 50:50 than 19% is. The gain comes from the much larger group below 0.71 becoming a little purer. When the tree searched every possible cut by itself, it chose 0.725, close to this hand-picked value.
+
+<Figure n={2} title="Measuring how mixed a group is" src={o10} alt="Two panels. Left: entropy in blue and Gini in orange against the share of a group that broke, both zero at 0 and 1 and highest at 0.5, entropy reaching 1 and Gini 0.5. Three groups are marked on both curves: all 16,769 training people at 19.2 percent broke in black, regularity at most 0.71 at 15.7 percent in green, and regularity above 0.71 at 28.0 percent in yellow. Right: bars of impurity before and after the split, weighted by group size: entropy 0.70642 before and 0.69259 after, a drop of 0.01383, and Gini 0.31074 before and 0.30446 after, a drop of 0.00628.">
+Left: entropy and Gini against the share of a group that broke, with the training people before the split and the two groups after it. Right: the impurity before and after the split, weighted by group size; the drop in entropy is the information gain.
+</Figure>
+
+It is generally possible to build an **endless number of different trees** from the same data. A cut can sit anywhere between two neighbouring values, so infinitely many cuts, such as 0.71 and 0.725 here, sort the people almost the same way. A tree can stop at any depth and require any minimum number of examples in a leaf. Features that carry similar information can stand in for each other. And a slightly different sample of the same people produces a different tree, because the greedy search follows small differences. The Results show 200 trees, each grown on a resampled copy of the training people, and 139 of them are different.
+
+A tree that keeps splitting until every leaf is pure fits its training examples perfectly, noise included, and then predicts new examples badly. This is called **overfitting**. The usual cures are to stop growing early, with a maximum depth or a minimum number of examples per leaf chosen by cross-validation, or to grow the tree fully and then **prune** it, removing the branches that help least. Both appear in the Results.
+
+In this project, the [NaiveBayes](../naivebayes/) tab found, after the fact, whose routine broke in the emergency: each person has a **habit model**, a description of where they usually are at each half hour, learned from their ordinary days, and for 19.1% of people that model became far more surprised by their days in the emergency than chance allows. Here decision trees ask whether this could have been foreseen. Each person is described only by numbers from days 0 to 44, long before anything happened, and the label is whether their routine broke on days 60 to 74. If ordinary weeks carry a warning, then a planner, or a simulation built from those weeks, could know in advance which people's simulated stand-ins to trust least once an emergency starts.
+
+## Data
+
+Decision trees are supervised, so they need labelled data: one row per person, with numbers that describe them and the class they belong to. The class, "broke" or "held", comes from the NaiveBayes tab. It is available for the 23,904 people with enough records in every fortnight, of whom 19.1% broke.
+
+Every feature comes from days 0 to 44 only, so nothing from the emergency can leak into the prediction. There are 34 of them:
+
+- **The fifteen traits of the Clustering tab**, averaged over days 0 to 44: how far a person ranges (for example how many kilometres their records typically lie from the middle of all their positions), how rooted they are (for example the share of records at home) and when they are out (for example the share of workday middays spent away from home). One of them is **regularity**, the share of workdays on which the person spends the middle of the day at their usual daytime place.
+- **Three recording traits**: records per day, the share of days with any record, and the hours between the first and last record of a day. They describe how well a person is recorded rather than how they live.
+- **Habit surprise on days 30 to 44**: how surprised a habit model learned on days 0 to 29 is by the person's days 30 to 44, a measure of how predictable the person was in ordinary times.
+- **Commute**: the distance in kilometres between home and the daytime place.
+- **Places at home and at the daytime place**: the logarithm of the number of places of any kind that YJMob100K counts in the home square and in the daytime square.
+- **The kind of mover** from the Clustering tab and **the daily rhythm of the daytime place**, the type of the square where the person spends workday middays, also from the Clustering tab (busiest at 8 am, noon, 5 pm, 6 pm or 8 pm, or a quiet square with too few records to give it a type).
+
+Table 1 shows six training people with some of these features and their label. Scikit-learn's trees need numbers only, so the kind of mover and the rhythm of the daytime place, which are categories, are turned into 0/1 columns, one per category: a person who is a far roamer has a 1 in the "far roamer" column and 0 in the five other kind columns (Table 2). No values are missing, so nothing had to be filled in.
+
+<Figure label="Table" n={1} title="Before: six training people with their label" src={t14} alt="Table image with six rows and the columns uid, regularity, midday_away, home_share, rg_km, records_per_day, habit_surprise_30_44, kind, daytime_place and broke. For example person 12049 has regularity 0.958, is a local regular whose daytime place is busiest at noon, and did not break; person 15268 has regularity 0.0, is a far roamer and broke.">
+Six of the training people with some of their 34 features, their kind of mover, the rhythm of their daytime place and the label. Kind and place type are still words here.
+</Figure>
+
+<Figure label="Table" n={2} title="After: the same people as the trees read them" src={t15} alt="Table image with the same six people and numeric columns only: regularity, midday_away, home_share, rg_km, records_per_day, habit_surprise_30_44, commute_km and three of the twelve 0/1 columns, far roamer, mid-range and commuter. For example person 15268 has a 1 in the far roamer column and 0 in the others.">
+The same six people as numbers only, with the kind of mover and the rhythm of the daytime place written as 0/1 columns; three of the twelve such columns are shown.
+</Figure>
+
+The training and test sets are split **by person**, the same way as on every tab. On the DataPrep_EDA tab every person was assigned once, at random, to a development group or an evaluation group. The 16,769 labelled development people train the trees, and the 7,135 labelled evaluation people are the test set (Table 3). The two sets share nobody. A disjoint test set is the only honest way to see how a tree does on people it has never seen. If test people were also in training, a deep tree could simply memorise them, and the test score would say nothing about anyone new. Both sets hold almost the same share of people who broke, 19.2% and 18.9%. Table 4 shows six test people.
+
+<Figure label="Table" n={3} title="Training and test sets" src={t16} alt="Table image with two rows. Training: 16,769 people, 3,226 broke, share broke 0.192, development people. Test: 7,135 people, 1,346 broke, share broke 0.189, evaluation people.">
+How many people are in each set and how many of them broke. The sets are split by person and share nobody.
+</Figure>
+
+<Figure label="Table" n={4} title="Six test people" src={t18} alt="Table image with six evaluation people in the same layout as Table 1, three who broke and three who held. For example person 7767 has regularity 0.925, is a weekend mover whose daytime place is busiest at noon, and broke; person 24451 has regularity 0.875, is a regular commuter, and held.">
+Six of the evaluation people, three whose routine broke and three whose routine held, in the same form as Table 1. The trees never saw them during training.
+</Figure>
+
+Only about one person in five broke. A tree that always answered "held" would be right for 81.1% of the test people while finding nobody who broke. So the trees are trained with **balanced class weights**, which make every person who broke count about four times as much as a person who held, and the results report balanced accuracy and AUC next to plain accuracy.
+
+Links: a sample of 500 labelled people with all 34 features, the label, the split and the kind of mover is [`data/samples/who_breaks_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-3/data/samples/who_breaks_sample.csv). The features are built from the cleaned record table in the release [Processed tables, Part 1](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/releases/tag/data-v1).
+
+## Code
+
+Python 3.11 with pandas, NumPy, scikit-learn 1.9 (DecisionTreeClassifier, GridSearchCV and the pruning path) and Matplotlib, run on the Alpine cluster at the University of Colorado Boulder. The pretrained models use tabicl 2.2, tabpfn 9.2 on an NVIDIA L40 GPU, and tabpfn-client 0.6 for the Prior Labs servers.
+
+- [`notebooks/04_when_and_who.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-3/notebooks/04_when_and_who.ipynb): the features, the split worked by hand, the three trees, the pruning path, the 200 resampled trees and who breaks without a model, with Figures 3 to 7 and Tables 1 to 3.
+- [`notebooks/05_foundation_models.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-3/notebooks/05_foundation_models.ipynb): TabICLv2, TabPFN-3.5 and TabPFN-3.5 Thinking on the same people, and Figure 8.
+- [`code/overview_images_part3.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-3/code/overview_images_part3.py) draws Figures 1 and 2, and [`code/part3_test_set_tables.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-3/code/part3_test_set_tables.py) draws Table 4 from the sample above.
+
+## Results
+
+### Three trees
+
+Three trees were grown on the training people and tested on the evaluation people. **Tree 1** is cut at depth 2, so that it is a rule anyone can say out loud. **Tree 2** is tuned by 5-fold cross-validation: the training people are split into five parts, each setting is trained on four parts and scored on the fifth, five times over, and the setting with the best average AUC is kept. The search covered Gini and entropy, maximum depths from 2 to 10 and minimum leaf sizes from 10 to 200 people. **Tree 3** is grown fully, with no limits at all.
+
+Accuracy alone is misleading here, because always answering "held" scores 81.1%. **Balanced accuracy** is the average of two shares, the share of people who broke that are found and the share of people who held that are left alone, so guessing scores 50% and a perfect tree 100%. **AUC** asks how often a tree ranks a randomly chosen person who broke above a randomly chosen person who held. Figure 3 shows all three trees on the 7,135 test people.
+
+<Figure n={3} title="Confusion matrices and accuracy of the three trees" src={f40} alt="Three confusion matrices of the test people with actual class in rows and predicted class in columns. Tree 1, depth 2, accuracy 73.8 percent, balanced 57.2 percent: of people who held, 4,859 predicted held and 930 broke; of people who broke, 936 predicted held and 410 broke. Tree 2, tuned, accuracy 58.3 percent, balanced 59.4 percent: 3,337, 2,452, 523 and 823. Tree 3, grown fully, accuracy 70.8 percent, balanced 52.6 percent: 4,735, 1,054, 1,030 and 316.">
+The three trees on the 7,135 test people, with the count and the row share in each cell. Tree 2 finds the most people who broke (61%) at the price of flagging 42% of those who held, and Tree 3 does little better than guessing.
+</Figure>
+
+Tree 1 is right for 73.8% of test people, but it finds only 410 of the 1,346 people who broke (30%); its balanced accuracy is 57.2% and its AUC 0.600. Its rule is short (Figure 4). The root asks about regularity and cuts it at 0.725. Both branches then ask about the commute, and only one leaf predicts "broke": people whose regularity is above 0.725 and whose commute is longer than 0.6 km. In plain words, the tree's warning sign is a regular workday rhythm at a place some distance from home.
+
+<Figure n={4} title="Tree 1: a rule you can say out loud" src={f41} alt="Decision tree of depth 2. The root asks regularity at most 0.725, with Gini 0.5 because of the balanced class weights. The true branch, 72.4 percent of the training people, asks commute_km at most 0.854 and ends in two leaves labelled held. The false branch, 27.6 percent, asks commute_km at most 0.604; its left leaf, 8.0 percent of people, is labelled held, and its right leaf, 19.6 percent, with weighted shares 0.331 held and 0.669 broke, is labelled broke.">
+The depth-2 tree with its Gini impurity, its share of the training people and the weighted shares of held and broke in every node. Only one path predicts "broke": regularity above 0.725 and a commute longer than 0.6 km.
+</Figure>
+
+Cross-validation chose Gini, a maximum depth of 10 and at least 200 people in every leaf, which gives Tree 2 54 leaves (Figure 5). Gini and entropy came out the same to three decimals (cross-validated AUC 0.633). The chosen depth and leaf size are the largest that were tried, so a wider search might do slightly better. On the test people Tree 2 has the lowest accuracy of the three, 58.3%, but the highest balanced accuracy, 59.4%, and the highest AUC, 0.629. It finds 823 of the 1,346 people who broke (61%) while flagging 2,452 of the 5,789 who held (42%). Its first two levels are the same questions as Tree 1. Regularity carries 32% of all its splitting work, the share of records at home 16% and the commute 14%, with everything else far behind.
+
+<Figure n={5} title="Tree 2: tuned by cross-validation" src={f42} alt="The top of the tuned decision tree: the root and three levels below it, with grey boxes marked with dots where the tree continues. The root asks regularity at most 0.725, then commute_km at most 0.854 or at most 0.604, and the third level asks about home_share, midday_away and moving_share; the fourth level asks about habit_surprise_30_44, moving_share, home_share, top2_share, entropy and regularity again. Orange boxes lean to held, blue boxes to broke.">
+The root and the three levels below it of the 54-leaf tree, with the share of the training people and the weighted shares of held and broke in every node; grey boxes mark where the tree goes on. It starts with the same two questions as Tree 1.
+</Figure>
+
+Tree 3 grows to 2,779 leaves, 48 questions deep, and gets every training person right. On the test people it does little better than guessing: balanced accuracy 52.6%, AUC 0.526. It learned the training people, not a rule about people. Its 70.8% accuracy comes from answering "held" for most people, which is easy when four in five held.
+
+### Pruning, and why there is never one tree
+
+Pruning shows the same thing step by step (Figure 6, left). Starting from the full tree, branches are removed in the order in which they add the least, and each pruned tree is scored again. Balanced accuracy on the training people falls from 100% to 61%, while on the test people it rises from 52.6% at 2,779 leaves to 58.6% at 11 leaves. Here, smaller trees are better trees.
+
+Then 200 depth-2 trees were grown, each on a different resampled copy of the training people, drawn with replacement so that some people appear twice and others not at all (Figure 6, right). All 200 ask about regularity first, but they cut it anywhere between 0.61 and 0.82. Their second questions vary: 88 trees ask about the commute on both sides, 75 about the commute on one side and the share of records at home on the other, and smaller numbers pair the commute with records at night, middays away from home or the length of moves. 139 of the 200 trees are different, and yet their test balanced accuracy only ranges from 56.8% to 59.3%. Many different trees fit these people almost equally well, which is why no single tree's exact cuts should be read as the truth. What all of them share, a first question about regularity, is the part to trust.
+
+<Figure n={6} title="Pruning, and 200 trees that differ" src={f43} alt="Two panels. Left: balanced accuracy against the number of leaves on a log scale, for training people in blue and test people in orange. The training line rises from about 61 percent at 11 leaves to 100 percent at about 2,800 leaves, while the test line falls from about 59 percent to about 53 percent. Dashed lines mark depth 2, tuned and grown fully. Right: horizontal bars counting the second-level questions of 200 resampled depth-2 trees: commute and commute 88, commute and home share 75, commute and night share 14, commute and midday away 5, commute and step 5, with a note that the first question was regularity in all 200, cut between 0.61 and 0.82, 139 distinct trees, test balanced accuracy 56.8 to 59.3 percent.">
+Left: as the full tree is pruned to fewer leaves, it fits the training people less and the test people better. Right: the second questions of 200 depth-2 trees grown on resampled training people; all of them ask about regularity first.
+</Figure>
+
+### Who breaks
+
+Behind every tree is one plain pattern that needs no model at all (Figure 7). Among the most regular fifth of people, 30.0% broke, twice as many as among the least regular fifth (14.1%), and the share rises with every fifth: 14.1%, 15.0%, 15.7%, 20.9% and 30.0%. By kind of mover, regular commuters broke most (28.8%) and mid-range movers least (13.8%). People whose daytime place is busiest at noon, the rhythm that looked most like workplaces on the Clustering tab, broke more often (22.1%) than people whose daytime place is busiest in the evening or a quiet square (16.7% to 16.9%).
+
+<Figure n={7} title="Who breaks, without a model" src={f44} alt="Three bar charts of the percentage of people whose routine broke, with a dashed line at the overall 19 percent. By regularity fifth: 14, 15, 16, 21 and 30 percent from least to most regular. By kind of mover: far roamers 16, mid-range movers 14, regular commuters 29, local regulars 21, weekend movers 19 and homebodies 21 percent. By the rhythm of the daytime place: quiet cell 17, peak 18:00 17, peak 20:00 17, peak 08:00 20, peak 17:00 20 and peak 12:00 22 percent.">
+The share of people whose routine broke by fifth of regularity, by kind of mover and by the daily rhythm of their daytime place, with the overall 19% dashed. The most regular people broke twice as often as the least regular.
+</Figure>
+
+This is the surprise. Regularity is what makes a person easy to describe: someone who goes to the same place every workday is the easiest person to predict, and a simulated stand-in built from their ordinary weeks looks most reliable in ordinary times. Those are the people whose routines the emergency broke most often. A fixed workday rhythm has the most to lose when ordinary workdays stop.
+
+### A check by pretrained models
+
+Trees are readable but not the most accurate models. As a check, three pretrained tabular models read the same 34 features of the same people. **TabICLv2** and **TabPFN-3.5** are transformer networks pretrained on millions of synthetic tables. They are not trained on this data at all: they read the training people as examples and predict the test people in a single pass, much as a language model answers a question from examples in its prompt. **TabPFN-3.5 Thinking** is the strongest setting of the TabPFN family, which spends extra computing time on Prior Labs' servers searching for the best way to prepare the table, here told to maximise AUC. The table sent to the servers held only the numbers, with no person ids.
+
+All three do better than the best tree (Figure 8). Their AUCs are 0.662, 0.665 and 0.663, against 0.629 for Tree 2, and their balanced accuracy lies between 60.6% and 62.1%. Compared on the same 2,000 resamples of the test people, the gain over Tree 2 is between 0.033 and 0.035, with 95% intervals between 0.021 and 0.047, so it is small but real. The Thinking setting adds nothing over the standard TabPFN-3.5. Even the strongest model available ranks a person who broke above a person who held only two times in three.
+
+<Figure n={8} title="Readable trees against pretrained models" src={f46} alt="Two panels. Left: AUC in percent with 95 percent bootstrap intervals for six models on the test people: tree 1 depth 2 60.0, tree 2 tuned 62.9, tree 3 grown fully 52.6, TabICLv2 66.2, TabPFN-3.5 66.5 and TabPFN-3.5 Thinking 66.3, with a dashed line at 50. Right: ROC curves of tree 2 and the three pretrained models; the three pretrained curves lie on top of each other and slightly above the tree's curve, all well above the diagonal.">
+Left: AUC on the test people with 95% bootstrap intervals for the three trees and three pretrained models. Right: ROC curves, the share of people who broke that a model flags against the share of people who held that it flags, as its threshold moves.
+</Figure>
+
+## Conclusions
+
+Ordinary weeks gave only a faint warning of whose routine would break. The best readable tree ranks a person who broke above a person who held about 63% of the time, and the strongest pretrained models manage 66%. Most of who would break was not written in their ordinary weeks, at least not in any of the 34 ways they were measured here.
+
+The warning that does exist points in an unexpected direction. Every tree, whichever sample it was grown on, asks first about regularity, and the more regular people were, the more often their routine broke: three in ten of the most regular fifth against one in seven of the least regular. Regular commuters, people whose daytime place is busiest at midday, and people who travel some distance to it were most at risk.
+
+Simple trees did better than complex ones. The fully grown tree memorised its training people and failed on new ones, pruning improved it step by step, and the best tree stops at 54 leaves. Many different trees fit the data almost equally well, so the exact cut on regularity matters less than the fact that regularity is always the first question.
+
+For the project this is a central result. A simulated stand-in looks most reliable for the people it describes best in ordinary times, those with regular weeks, and those are exactly the people whose stand-ins failed most often in the emergency. How good a stand-in looks before a disruption is not a guide to how well it will hold up during one. The [Research](../research/#invisible-breaks) tab follows the other half of this: the people with irregular weeks whose routines also broke, and whom an alarm could not see.

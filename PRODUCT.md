@@ -45,7 +45,7 @@ The course methods are instruments of one study, not a gallery of demos: each ta
 ## Evidence on Hand
 
 - Data: YJMob100K (Yabe et al., 2024, CC BY 4.0) and Foursquare Tokyo check-ins (Yang et al., 2015).
-- Figures f01 to f32, tables t01 to t10 and overview images o01 to o05 in site/src/assets/figures; data for the interactive figures in site/src/data; notebooks 01 to 05 in notebooks/; Part 3 figures f33 to f46 and tables t11 to t16 are being produced.
+- Figures f01 to f52, tables t01 to t18 and overview images o01 to o10 in site/src/assets/figures; data for the interactive figures in site/src/data (including invisible_breaks.json for the Research tab); notebooks 01 to 07 in notebooks/; logs of every Part 3 number in logs/.
 - There are no users, testimonials, press or deployments, and none are to be invented.
 
 ## Product Principles

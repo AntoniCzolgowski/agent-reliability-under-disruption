@@ -203,6 +203,15 @@ Square corners throughout (0 radius): buttons, toggles, selects, figure frames, 
 ### Data table
 - Chivo Mono 0.85rem with tabular figures, sans-serif header cells at 500, left aligned, 1px Rule Grey row rules, no fills, horizontal scroll inside its own box on narrow screens.
 
+### In-page tabs (Research)
+- A row of tab names under the lede, in Chivo 0.95rem, styled like the site navigation: the current tab carries a 2px Ink underline over a 1px Rule Grey line. It sticks to the top of the window while its section is read. With JavaScript it is an ARIA tab list (arrow keys, Home, End) that shows one section at a time and keeps the address bar in step, so a link to any heading inside a section opens the right tab; without JavaScript the tabs are plain links and every section shows in order.
+
+### Findings list
+- The first block of the Findings tab: each finding's name as a Chivo 500 link with one serif sentence under it, separated by 1px Rule Grey lines. No cards, no dates, no badges.
+
+### Quoted prompt
+- Text given to a model is quoted as data: Chivo Mono 0.86rem with a 1px Ink rule on the left.
+
 ### Placeholder for Antoni's own copy
 - Chivo Mono 0.85rem in Vermilion Ink with a 2px Vermilion rule on the left; it marks text he writes himself and must not ship to a graded part unfilled.
 
