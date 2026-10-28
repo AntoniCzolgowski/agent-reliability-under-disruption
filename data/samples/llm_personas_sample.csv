@@ -1,0 +1,31 @@
+uid,persona,broke,Qwen3-8B,Minitaur-8B
+11806,"- About 19% of the times your location was recorded, you were at home.
+- On workdays you were away from home 98% of the time between 7 and 9 am, 97% between 10 am and 4 pm, and 87% between 6 and 10 pm.
+- On 17% of workdays you spent the middle of the day at your usual daytime place, 19.2 km from home.
+- You usually moved within about 23.2 km and passed through about 6 different 500-metre squares a day.
+- On weekends you were away from home less often than on workdays.",True,0.953,0.679
+10839,"- About 8% of the times your location was recorded, you were at home.
+- On workdays you were away from home 91% of the time between 7 and 9 am, 94% between 10 am and 4 pm, and 94% between 6 and 10 pm.
+- On 26% of workdays you spent the middle of the day at your usual daytime place, 1.0 km from home.
+- You usually moved within about 3.7 km and passed through about 7 different 500-metre squares a day.
+- On weekends you were away from home about as often as on workdays.",True,0.977,0.651
+6403,"- About 65% of the times your location was recorded, you were at home.
+- On workdays you were away from home 40% of the time between 7 and 9 am, 49% between 10 am and 4 pm, and 35% between 6 and 10 pm.
+- Your usual daytime place is in your home neighbourhood; on 65% of workdays you spent the middle of the day there.
+- You usually moved within about 6.3 km and passed through about 2 different 500-metre squares a day.
+- On weekends you were away from home less often than on workdays.",True,0.963,0.679
+6292,"- About 6% of the times your location was recorded, you were at home.
+- On workdays you were away from home 100% of the time between 7 and 9 am, 99% between 10 am and 4 pm, and 100% between 6 and 10 pm.
+- On 68% of workdays you spent the middle of the day at your usual daytime place, 7.5 km from home.
+- You usually moved within about 6.7 km and passed through about 7 different 500-metre squares a day.
+- On weekends you were away from home about as often as on workdays.",False,0.971,0.651
+10553,"- About 35% of the times your location was recorded, you were at home.
+- On workdays you were away from home 51% of the time between 7 and 9 am, 86% between 10 am and 4 pm, and 62% between 6 and 10 pm.
+- Your usual daytime place is in your home neighbourhood; on 17% of workdays you spent the middle of the day there.
+- You usually moved within about 5.1 km and passed through about 4 different 500-metre squares a day.
+- On weekends you were away from home about as often as on workdays.",False,0.94,0.679
+14608,"- About 59% of the times your location was recorded, you were at home.
+- On workdays you were away from home 50% of the time between 7 and 9 am, 25% between 10 am and 4 pm, and 100% between 6 and 10 pm.
+- Your usual daytime place is in your home neighbourhood; on 61% of workdays you spent the middle of the day there.
+- You usually moved within about 6.8 km and passed through about 3 different 500-metre squares a day.
+- On weekends you were away from home less often than on workdays.",False,0.989,0.651

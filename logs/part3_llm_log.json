@@ -1,0 +1,137 @@
+{
+  "people": 7135,
+  "broke_share": 0.1886,
+  "models": {
+    "Qwen3-8B": "Qwen/Qwen3-8B",
+    "Minitaur-8B": "marcelbinz/Llama-3.1-Minitaur-8B"
+  },
+  "question": "Tomorrow an emergency begins in your city and will last about two weeks. You do not know yet what kind of emergency it is. Will your daily routine, meaning where you are at each time of the day, change noticeably compared with the last six weeks?",
+  "auc": {
+    "regularity alone": {
+      "AUC": 0.6014,
+      "2.5%": 0.5843,
+      "97.5%": 0.6183
+    },
+    "tabular model (notebook 05)": {
+      "AUC": 0.6645,
+      "2.5%": 0.6488,
+      "97.5%": 0.6806
+    },
+    "Qwen3-8B stand-in": {
+      "AUC": 0.5352,
+      "2.5%": 0.5182,
+      "97.5%": 0.5527
+    },
+    "Minitaur-8B stand-in": {
+      "AUC": 0.4992,
+      "2.5%": 0.4844,
+      "97.5%": 0.5143
+    }
+  },
+  "auc_by_fifth": {
+    "least regular": {
+      "tabular model": 0.6202,
+      "Qwen3-8B stand-in": 0.4943,
+      "Minitaur-8B stand-in": 0.5139
+    },
+    "2nd": {
+      "tabular model": 0.6003,
+      "Qwen3-8B stand-in": 0.5077,
+      "Minitaur-8B stand-in": 0.5146
+    },
+    "3rd": {
+      "tabular model": 0.6792,
+      "Qwen3-8B stand-in": 0.5283,
+      "Minitaur-8B stand-in": 0.4948
+    },
+    "4th": {
+      "tabular model": 0.637,
+      "Qwen3-8B stand-in": 0.5173,
+      "Minitaur-8B stand-in": 0.513
+    },
+    "most regular": {
+      "tabular model": 0.6036,
+      "Qwen3-8B stand-in": 0.5322,
+      "Minitaur-8B stand-in": 0.4864
+    }
+  },
+  "belief_by_fifth": {
+    "least regular": {
+      "broke": 0.1303,
+      "Qwen3-8B": 0.9524999856948853,
+      "Minitaur-8B": 0.6672999858856201
+    },
+    "2nd": {
+      "broke": 0.1554,
+      "Qwen3-8B": 0.9508000016212463,
+      "Minitaur-8B": 0.6675999760627747
+    },
+    "3rd": {
+      "broke": 0.1616,
+      "Qwen3-8B": 0.9502999782562256,
+      "Minitaur-8B": 0.6675000190734863
+    },
+    "4th": {
+      "broke": 0.1966,
+      "Qwen3-8B": 0.9574999809265137,
+      "Minitaur-8B": 0.666100025177002
+    },
+    "most regular": {
+      "broke": 0.3003,
+      "Qwen3-8B": 0.9596999883651733,
+      "Minitaur-8B": 0.666100025177002
+    }
+  },
+  "belief_by_kind": {
+    "far roamers": {
+      "broke": 0.153,
+      "Qwen3-8B": 0.9455000162124634,
+      "Minitaur-8B": 0.6676999926567078
+    },
+    "mid-range movers": {
+      "broke": 0.1313,
+      "Qwen3-8B": 0.9531999826431274,
+      "Minitaur-8B": 0.6668000221252441
+    },
+    "regular commuters": {
+      "broke": 0.2915,
+      "Qwen3-8B": 0.9614999890327454,
+      "Minitaur-8B": 0.6650999784469604
+    },
+    "local regulars": {
+      "broke": 0.2002,
+      "Qwen3-8B": 0.9589999914169312,
+      "Minitaur-8B": 0.6671000123023987
+    },
+    "weekend movers": {
+      "broke": 0.2004,
+      "Qwen3-8B": 0.9778000116348267,
+      "Minitaur-8B": 0.671999990940094
+    },
+    "homebodies": {
+      "broke": 0.2092,
+      "Qwen3-8B": 0.9355000257492065,
+      "Minitaur-8B": 0.6644999980926514
+    }
+  },
+  "rank_corr_kinds": {
+    "Qwen3-8B": 0.257,
+    "Minitaur-8B": -0.429
+  },
+  "rank_corr_fifths": {
+    "Qwen3-8B": 0.6,
+    "Minitaur-8B": -0.6
+  },
+  "answer_spread": {
+    "Qwen3-8B": {
+      "lowest_fifth": 0.95,
+      "highest_fifth": 0.96,
+      "sd_between_people": 0.036
+    },
+    "Minitaur-8B": {
+      "lowest_fifth": 0.666,
+      "highest_fifth": 0.668,
+      "sd_between_people": 0.014
+    }
+  }
+}
