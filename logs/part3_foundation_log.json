@@ -1,0 +1,127 @@
+{
+  "device": "cuda",
+  "gpu": "NVIDIA L40",
+  "packages": {
+    "torch": "2.14.1+cu126",
+    "chronos-forecasting": "2.3.2",
+    "tabicl": "2.2.0",
+    "tabpfn": "9.2.0",
+    "tabpfn-client": "0.6.1",
+    "scikit-learn": "1.9.0"
+  },
+  "chronos": {
+    "seconds": 21.9,
+    "day_auc_eval": 0.6008,
+    "worse_in_emergency_share": 0.6786,
+    "corr_with_surprise_rise": 0.5019,
+    "agrees_with_label_auc": 0.7771,
+    "median_score_by_kind": {
+      "far roamers": 0.00175,
+      "mid-range movers": 0.00406,
+      "regular commuters": 0.01316,
+      "local regulars": 0.00827,
+      "weekend movers": 0.00887,
+      "homebodies": 0.00184
+    },
+    "nb_and_chronos_day_auc": {
+      "multinomial NB": 0.5384,
+      "Bernoulli NB (when seen)": 0.5909,
+      "where NB, everyone": 0.5318,
+      "where NB, per kind": 0.5478,
+      "where NB, per person": 0.5591,
+      "Chronos-2, zero-shot": 0.6008
+    }
+  },
+  "tabicl": {
+    "test_auc": 0.6619,
+    "seconds": 3.6,
+    "device": "cuda"
+  },
+  "tabpfn35": {
+    "test_auc": 0.6645,
+    "seconds": 26.8,
+    "device": "cuda",
+    "n_estimators": 32,
+    "where": "local GPU",
+    "pretraining_max_rows": 1000000,
+    "pretraining_max_columns": 20000
+  },
+  "tabpfn35_thinking": {
+    "test_auc": 0.6633,
+    "seconds": 112.7,
+    "device": "cuda",
+    "effort": "high",
+    "budget_s": 2400,
+    "metric": "roc_auc",
+    "usage_before": "Currently, you have used 0 of the allowed limit of 20000000 credits. The limit will reset at 2026-11-01 00:00:00 UTC.",
+    "quote_fit": {
+      "cost": 274871,
+      "pricing": "quota_v3"
+    },
+    "usage_after": "Currently, you have used 81988 of the allowed limit of 20000000 credits. The limit will reset at 2026-11-01 00:00:00 UTC."
+  },
+  "who_breaks": {
+    "tree 1, depth 2": {
+      "accuracy": 0.7385,
+      "balanced accuracy": 0.572,
+      "AUC": 0.5996,
+      "AUC 2.5%": 0.5828,
+      "AUC 97.5%": 0.6148,
+      "AUC minus tuned tree": -0.0294,
+      "diff 2.5%": -0.0443,
+      "diff 97.5%": -0.0152
+    },
+    "tree 2, tuned": {
+      "accuracy": 0.583,
+      "balanced accuracy": 0.5939,
+      "AUC": 0.629,
+      "AUC 2.5%": 0.6123,
+      "AUC 97.5%": 0.6461,
+      "AUC minus tuned tree": 0.0,
+      "diff 2.5%": 0.0,
+      "diff 97.5%": 0.0
+    },
+    "tree 3, grown fully": {
+      "accuracy": 0.7079,
+      "balanced accuracy": 0.5264,
+      "AUC": 0.5264,
+      "AUC 2.5%": 0.5143,
+      "AUC 97.5%": 0.5386,
+      "AUC minus tuned tree": -0.1027,
+      "diff 2.5%": -0.1215,
+      "diff 97.5%": -0.0849
+    },
+    "TabICLv2": {
+      "accuracy": 0.6803,
+      "balanced accuracy": 0.6148,
+      "AUC": 0.6619,
+      "AUC 2.5%": 0.6465,
+      "AUC 97.5%": 0.678,
+      "AUC minus tuned tree": 0.0328,
+      "diff 2.5%": 0.0212,
+      "diff 97.5%": 0.0444
+    },
+    "TabPFN-3.5": {
+      "accuracy": 0.639,
+      "balanced accuracy": 0.621,
+      "AUC": 0.6645,
+      "AUC 2.5%": 0.6488,
+      "AUC 97.5%": 0.6806,
+      "AUC minus tuned tree": 0.0355,
+      "diff 2.5%": 0.0246,
+      "diff 97.5%": 0.0466
+    },
+    "TabPFN-3.5 Thinking": {
+      "accuracy": 0.7162,
+      "balanced accuracy": 0.6056,
+      "AUC": 0.6633,
+      "AUC 2.5%": 0.6477,
+      "AUC 97.5%": 0.6796,
+      "AUC minus tuned tree": 0.0342,
+      "diff 2.5%": 0.0234,
+      "diff 97.5%": 0.0461
+    }
+  },
+  "who_breaks_reference": "tree 2, tuned",
+  "pretrained_threshold": 0.1924
+}

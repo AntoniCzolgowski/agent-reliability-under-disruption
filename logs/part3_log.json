@@ -1,0 +1,108 @@
+{
+  "people": 24514,
+  "nb_days": {
+    "train": 379586,
+    "val": 94965,
+    "test": 202744
+  },
+  "best_alpha": {
+    "Bernoulli (when seen)": 10.0,
+    "multinomial (where and when)": 10.0,
+    "where only (from scratch)": 10.0
+  },
+  "nb_test": {
+    "accuracy": {
+      "multinomial (where and when)": 0.5274,
+      "Bernoulli (when seen)": 0.5745,
+      "where only (from scratch)": 0.5305
+    },
+    "AUC": {
+      "multinomial (where and when)": 0.5384,
+      "Bernoulli (when seen)": 0.5909,
+      "where only (from scratch)": 0.5318
+    },
+    "log loss": {
+      "multinomial (where and when)": 0.7837,
+      "Bernoulli (when seen)": 0.8423,
+      "where only (from scratch)": 0.7661
+    }
+  },
+  "eb_prior_strength_person": 4.0,
+  "eb_prior_strength_kind": {
+    "far roamers": [
+      "4",
+      "4"
+    ],
+    "mid-range movers": [
+      "64",
+      "64"
+    ],
+    "regular commuters": [
+      "16",
+      "16"
+    ],
+    "local regulars": [
+      "16",
+      "16"
+    ],
+    "weekend movers": [
+      "4",
+      "4"
+    ],
+    "homebodies": [
+      "4",
+      "4"
+    ]
+  },
+  "broke_share": 0.1913,
+  "placebo_share": 0.0501,
+  "broke_by_kind": {
+    "far roamers": 0.1561,
+    "homebodies": 0.2085,
+    "local regulars": 0.2096,
+    "mid-range movers": 0.138,
+    "regular commuters": 0.2876,
+    "weekend movers": 0.1923
+  },
+  "cusum": {
+    "k": 0.2,
+    "h": 9.96
+  },
+  "trees": {
+    "leaves": {
+      "tree 1, depth 2": 4.0,
+      "tree 2, tuned": 54.0,
+      "tree 3, grown fully": 2779.0
+    },
+    "depth": {
+      "tree 1, depth 2": 2.0,
+      "tree 2, tuned": 10.0,
+      "tree 3, grown fully": 48.0
+    },
+    "train accuracy": {
+      "tree 1, depth 2": 0.7388,
+      "tree 2, tuned": 0.6086,
+      "tree 3, grown fully": 1.0
+    },
+    "test accuracy": {
+      "tree 1, depth 2": 0.7385,
+      "tree 2, tuned": 0.583,
+      "tree 3, grown fully": 0.7079
+    },
+    "test balanced accuracy": {
+      "tree 1, depth 2": 0.572,
+      "tree 2, tuned": 0.5939,
+      "tree 3, grown fully": 0.5264
+    },
+    "test AUC": {
+      "tree 1, depth 2": 0.5996,
+      "tree 2, tuned": 0.629,
+      "tree 3, grown fully": 0.5264
+    }
+  },
+  "tuned_tree": {
+    "criterion": "gini",
+    "max_depth": 10,
+    "min_samples_leaf": 200
+  }
+}
