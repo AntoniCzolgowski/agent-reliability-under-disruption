@@ -20,3 +20,8 @@ site/src/pages/dev/
 
 # Course materials from Canvas and class (local reference only, not published)
 course-materials/
+
+# local AI tooling (the Impeccable skill is reinstalled per session); PRODUCT.md, DESIGN.md and .impeccable/design.json are kept
+.claude/
+.impeccable/config.local.json
+.impeccable/live/

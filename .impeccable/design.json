@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T02:08:15+00:00",
+  "title": "Design System: Agent reliability under disruption",
+  "extensions": {
+    "colorMeta": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(99.1% 0.003 106.4)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242423",
+          "#40403f",
+          "#5e5e5d",
+          "#80807f",
+          "#a5a5a3",
+          "#cacac9",
+          "#eeeeed"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(20.0% 0.009 264.4)",
+        "tonalRamp": [
+          "#090b0f",
+          "#222428",
+          "#3e4044",
+          "#5c5e61",
+          "#7f8083",
+          "#a3a4a7",
+          "#c9cacc",
+          "#eeeef0"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Pencil Grey",
+        "canonical": "oklch(49.1% 0.018 260.7)",
+        "tonalRamp": [
+          "#090b0f",
+          "#21242a",
+          "#3b4048",
+          "#585e68",
+          "#7b8089",
+          "#a1a5ac",
+          "#c7cbd0",
+          "#eceef2"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule Grey",
+        "canonical": "oklch(88.6% 0.006 117.9)",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242423",
+          "#3f403e",
+          "#5d5e5c",
+          "#80807e",
+          "#a4a5a2",
+          "#cacbc7",
+          "#eeefeb"
+        ]
+      },
+      "plate": {
+        "role": "neutral",
+        "displayName": "Plate White",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "cobalt": {
+        "role": "primary",
+        "displayName": "Ordinary-Day Cobalt",
+        "canonical": "oklch(49.1% 0.216 264.5)",
+        "tonalRamp": [
+          "#000134",
+          "#031665",
+          "#0e319a",
+          "#1d4cd2",
+          "#4978e9",
+          "#79a2fb",
+          "#abcaff",
+          "#dbefff"
+        ]
+      },
+      "vermilion": {
+        "role": "secondary",
+        "displayName": "Emergency Vermilion",
+        "canonical": "oklch(61.9% 0.207 31.1)",
+        "tonalRamp": [
+          "#240000",
+          "#4d0000",
+          "#790f03",
+          "#a82513",
+          "#df3d27",
+          "#ff715a",
+          "#ffa48e",
+          "#ffd1be"
+        ]
+      },
+      "vermilion-text": {
+        "role": "secondary",
+        "displayName": "Vermilion Ink",
+        "canonical": "oklch(54.8% 0.189 31.3)",
+        "tonalRamp": [
+          "#230000",
+          "#4c0000",
+          "#791003",
+          "#a82513",
+          "#d44d38",
+          "#f0806c",
+          "#ffb09f",
+          "#ffdccf"
+        ]
+      },
+      "teal": {
+        "role": "tertiary",
+        "displayName": "Model Teal",
+        "canonical": "oklch(62.2% 0.110 180.6)",
+        "tonalRamp": [
+          "#00110c",
+          "#002d25",
+          "#004c42",
+          "#006e60",
+          "#089583",
+          "#56b8a7",
+          "#8fdccd",
+          "#c0fdf0"
+        ]
+      },
+      "teal-text": {
+        "role": "tertiary",
+        "displayName": "Teal Ink",
+        "canonical": "oklch(52.1% 0.092 180.9)",
+        "tonalRamp": [
+          "#00100c",
+          "#002c25",
+          "#004b42",
+          "#036d60",
+          "#419083",
+          "#77b2a7",
+          "#aad5cc",
+          "#d9f6ef"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The tab title; clamp(2.4rem, 4vw, 3.2rem) on tab pages from 64rem."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings (Overview, Data, Code, Results, Conclusions) with a hairline rule above."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sub-sections inside a tab."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "The opening paragraph of a tab, in the serif."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text in a 38rem column (62rem and 1.3rem on wide tab pages)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Navigation, buttons, toggles."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Figure captions: mono figure number, title at 500, two sentences in Pencil Grey."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Every number meant to be compared: tables, readouts, counters."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "fade-in",
+        "value": "opacity 400ms ease",
+        "purpose": "The hero still giving way to the live canvas."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: reduce) { animation: none; transition: none }",
+        "purpose": "All motion stops; interactive figures start paused on a still."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "nav-collapse",
+        "value": "48rem"
+      },
+      {
+        "name": "home-line",
+        "value": "60rem"
+      },
+      {
+        "name": "tab-wide",
+        "value": "64rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Navigation tab link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Course tabs in a row; the current tab underlined in ink.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">Clustering</a><a href=\"#\">PCA</a><a href=\"#\" aria-current=\"page\">NaiveBayes</a><a href=\"#\">DecTrees</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 0 1.35rem; font: 400 0.875rem/1.2 Chivo, 'Helvetica Neue', Arial, sans-serif; border-bottom: 1px solid #d9dad6; } .ds-nav a { padding: 0.5rem 0 0.7rem; color: #14161a; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; } .ds-nav a:hover { border-bottom-color: #d9dad6; } .ds-nav a[aria-current='page'] { border-bottom-color: #14161a; } .ds-nav a:focus-visible { outline: 2px solid #1f4fd8; outline-offset: 3px; }"
+    },
+    {
+      "name": "Outline button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The only button style: square, ink outline (Menu, Close).",
+      "html": "<button class=\"ds-btn\" type=\"button\">Close</button>",
+      "css": ".ds-btn { font: 500 0.85rem/1 Chivo, 'Helvetica Neue', Arial, sans-serif; color: #14161a; background: #fcfcfa; border: 1px solid #14161a; border-radius: 0; padding: 0.55rem 0.8rem; cursor: pointer; } .ds-btn:hover { background: #14161a; color: #fcfcfa; } .ds-btn:focus-visible { outline: 2px solid #1f4fd8; outline-offset: 3px; } .ds-btn:disabled { color: #5b616b; border-color: #d9dad6; cursor: default; }"
+    },
+    {
+      "name": "Segmented toggle",
+      "kind": "custom",
+      "refersTo": "toggle-pressed",
+      "description": "Switches the view of an interactive figure; the pressed option filled in ink.",
+      "html": "<div class=\"ds-toggle\" role=\"group\" aria-label=\"Kind of day\"><button aria-pressed=\"true\">Workday</button><button aria-pressed=\"false\">Weekend</button></div>",
+      "css": ".ds-toggle { display: inline-flex; border: 1px solid #14161a; } .ds-toggle button { font: 500 0.82rem/1 Chivo, 'Helvetica Neue', Arial, sans-serif; padding: 0.55rem 0.8rem; background: #fcfcfa; color: #14161a; border: 0; border-radius: 0; cursor: pointer; } .ds-toggle button + button { border-left: 1px solid #14161a; } .ds-toggle button[aria-pressed='true'] { background: #14161a; color: #fcfcfa; } .ds-toggle button:focus-visible { outline: 2px solid #1f4fd8; outline-offset: -3px; }"
+    },
+    {
+      "name": "Numbered figure",
+      "kind": "card",
+      "refersTo": "figure-plate",
+      "description": "A figure on a white plate in a hairline frame, with a numbered two-sentence caption.",
+      "html": "<figure class=\"ds-fig\"><div class=\"ds-plate\"><svg viewBox=\"0 0 300 90\" width=\"100%\" aria-hidden=\"true\"><polyline points=\"0,70 50,60 100,62 150,55 200,58 250,40 300,30\" fill=\"none\" stroke=\"#1f4fd8\" stroke-width=\"2\"/><polyline points=\"200,58 250,72 300,80\" fill=\"none\" stroke=\"#e8412a\" stroke-width=\"2\"/></svg></div><figcaption><span class=\"ds-no\">Figure 3</span><span class=\"ds-title\">When the routine broke</span><span class=\"ds-text\">Each line is one person's evidence for the emergency, day by day. Notice the step at day 60.</span></figcaption></figure>",
+      "css": ".ds-fig { margin: 0; max-width: 38rem; } .ds-plate { border: 1px solid #d9dad6; background: #ffffff; padding: 0.8rem; cursor: zoom-in; } .ds-fig figcaption { font: 400 0.9rem/1.5 Chivo, 'Helvetica Neue', Arial, sans-serif; margin-top: 0.7rem; color: #14161a; } .ds-no { font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 0.82rem; color: #5b616b; margin-right: 0.5rem; } .ds-title { font-weight: 500; } .ds-text { display: block; color: #5b616b; margin-top: 0.2rem; }"
+    },
+    {
+      "name": "Data table",
+      "kind": "custom",
+      "refersTo": "data-table",
+      "description": "Monospace numbers with tabular figures, hairline rows, no fills.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>model</th><th>accuracy</th><th>AUC</th></tr></thead><tbody><tr><td>tree 2, tuned</td><td>0.675</td><td>0.567</td></tr><tr><td>TabICLv2</td><td>0.667</td><td>0.641</td></tr></tbody></table>",
+      "css": ".ds-table { border-collapse: collapse; font: 400 0.85rem/1.4 'Chivo Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; color: #14161a; } .ds-table th, .ds-table td { text-align: left; padding: 0.45rem 1rem 0.45rem 0; border-bottom: 1px solid #d9dad6; } .ds-table th { font-family: Chivo, 'Helvetica Neue', Arial, sans-serif; font-weight: 500; }"
+    },
+    {
+      "name": "Hairline scrubber",
+      "kind": "input",
+      "refersTo": "button-outline",
+      "description": "Time scrubber of the interactive figures: a hairline track and a thin ink thumb.",
+      "html": "<input class=\"ds-scrub\" type=\"range\" min=\"0\" max=\"74\" value=\"60\" aria-label=\"Day\">",
+      "css": ".ds-scrub { -webkit-appearance: none; appearance: none; width: 16rem; height: 1.4rem; background: none; margin: 0; cursor: pointer; } .ds-scrub::-webkit-slider-runnable-track { height: 1px; background: #d9dad6; } .ds-scrub::-moz-range-track { height: 1px; background: #d9dad6; } .ds-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 2px; height: 14px; margin-top: -6.5px; background: #14161a; border-radius: 0; } .ds-scrub::-moz-range-thumb { width: 2px; height: 14px; background: #14161a; border: 0; border-radius: 0; } .ds-scrub:focus-visible { outline: 2px solid #1f4fd8; outline-offset: 4px; }"
+    },
+    {
+      "name": "Placeholder for the author's own copy",
+      "kind": "custom",
+      "refersTo": "placeholder",
+      "description": "Marks text Antoni writes himself; never ships unfilled.",
+      "html": "<p class=\"ds-todo\">Antoni: one paragraph on what this part adds.</p>",
+      "css": ".ds-todo { font: 400 0.85rem/1.5 'Chivo Mono', ui-monospace, monospace; color: #c7321d; border-left: 2px solid #e8412a; padding: 0.35rem 0 0.35rem 0.8rem; max-width: 38rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Field Report",
+    "overview": "The site reads like a careful field report printed on good paper: a serif text column made for long reading, sans-serif headings that act as signposts, numbers in a monospace face so they line up and can be checked, and thin rules instead of boxes. Nothing is decorative. Colour is scarce on purpose and always carries a meaning, so a reader who has learned that blue is an ordinary day and red is the emergency can read any figure on any tab without a legend.\n\nDensity is that of a journal article with generous measure: one text column, figures as wide as the column or a little wider, numbered and captioned in two sentences. Interactive pieces (the hero on Home, the openers on Clustering and PCA) sit inside the same frame as a figure, with square controls drawn as outlines, so they read as instruments in the report rather than as an app on top of it.\n\nThe look avoids dashboards, cards, gradients, shadows, rounded pills and icon decoration. It stays light, flat and quiet so that the data figures are the loudest thing on the page.",
+    "keyCharacteristics": [
+      "Serif body (Brygada 1918), sans headings and interface (Chivo), monospace numbers (Chivo Mono)",
+      "Warm off-white ground, near-black ink, 1px grey rules; flat, no shadows, square corners everywhere",
+      "Colour by meaning only: cobalt ordinary days, vermilion emergency, teal modelled or simulated",
+      "Numbered figures on white plates, two-sentence captions, click to enlarge",
+      "One reading column; tab pages widen it on large screens"
+    ],
+    "rules": [
+      {
+        "name": "The Fixed Meaning Rule",
+        "body": "Cobalt is an ordinary day, vermilion is the emergency, teal is a model. A colour never changes meaning between tabs, and no other saturated colour enters the interface chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The Six Kinds Rule",
+        "body": "The six kinds of movers keep one colour each wherever they appear (far roamers #2a78d6, mid-range movers #4a3aa7, regular commuters #1baf7a, local regulars #eda100, weekend movers #e87ba4, homebodies #eb6834), in exported figures and interactive openers alike.",
+        "section": "colors"
+      },
+      {
+        "name": "The Monospace Number Rule",
+        "body": "Numbers meant to be compared (tables, readouts, counters, inline values with the num class) are set in Chivo Mono with tabular figures, so columns of numbers line up.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Shadow Rule",
+        "body": "Separation is made with space and 1px rules, never with shadows, cards or tinted panels.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep cobalt for ordinary days, vermilion for the emergency and teal for models, in figures, openers and text alike.",
+      "**Do** number every figure within its tab and caption it in two sentences: what it shows, then what to notice.",
+      "**Do** set compared numbers in Chivo Mono with tabular figures.",
+      "**Do** separate sections with space and a 1px Rule Grey line above each h2.",
+      "**Do** build new interactive pieces from the opener pattern: a white stage in a hairline frame, a monospace readout, square outline controls, and a still or reduced-motion path."
+    ],
+    "donts": [
+      "**Don't** add shadows, rounded corners, cards, gradients or tinted panels.",
+      "**Don't** introduce a new saturated colour for interface chrome, or reuse cobalt, vermilion or teal with another meaning.",
+      "**Don't** put a basemap, place names or anything else that could locate the grid behind a figure.",
+      "**Don't** widen running text past the column measure, or set body text in the sans."
+    ]
+  }
+}
