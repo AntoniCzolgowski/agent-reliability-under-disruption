@@ -1,0 +1,277 @@
+---
+// Drop the city through the tree: the opener of the DecTrees tab. The 7,135 evaluation people fall as beads through Tree 1's two
+// questions (regularity above 0.725, then commute above 0.854 km or 0.604 km) and pile up in its four leaves, red if their routine
+// broke and blue if it held; the switch recolours them by kind of mover. The drop starts once most of the figure is on screen
+// and the reader has stayed a moment, and its clock stops while the figure is off screen. Data: src/data/drop_tree.json from
+// code/export_part3_viz.py.
+import data from "../data/drop_tree.json";
+const n = data.leaf.length;
+let f = 0, fb = 0;
+for (let i = 0; i < n; i++) if (data.leaf[i] === "3") { f++; if (data.broke[i] === "1") fb++; }
+const alt = `${n.toLocaleString("en-US")} evaluation people fall as beads through a decision tree of two questions, regularity and commute, into four piles. The flagged pile, regular people who travel to their daytime place, holds ${f.toLocaleString("en-US")} people, of whom ${fb} broke (${((100 * fb) / f).toFixed(1)}%).`;
+const KINDS = [
+  ["far roamers", "#2a78d6", "They range widest across the city, with many different places a day and few fixed ones."],
+  ["mid-range movers", "#4a3aa7", "A life like the far roamers' at about half the range."],
+  ["regular commuters", "#1baf7a", "Away from home on most workday mornings, and at the same daytime place on most workday middays."],
+  ["local regulars", "#eda100", "They stay within about 6 km and keep half their records near home."],
+  ["weekend movers", "#e87ba4", "Away from home more than twice as much on weekends as on workdays."],
+  ["homebodies", "#eb6834", "Three quarters of their records near home, and moves within about 3 km."],
+];
+---
+
+<figure class="opener" id="drop-tree">
+  <div class="opener-stage dt-stage">
+    <canvas class="dt-canvas" role="img" aria-label={alt}></canvas>
+    <div class="opener-read" aria-live="polite"><div class="big" id="dt-big">7,135</div><div class="small" id="dt-small">people, about to fall through the tree</div></div>
+    <div class="opener-toggle" role="group" aria-label="Colour the beads by">
+      <button type="button" data-c="broke" aria-pressed="true">Broke or held</button>
+      <button type="button" data-c="kind" aria-pressed="false">Kind of mover</button>
+    </div>
+    <div class="opener-hover" id="dt-hover" aria-hidden="true"></div>
+  </div>
+  <div class="opener-bar"><button type="button" class="btn-outline" id="dt-again">Drop again</button></div>
+  <ul class="opener-legend" id="dt-leg-broke">
+    <li><button type="button" aria-describedby="dt-tq">two questions</button><span class="opener-tip" role="tooltip" id="dt-tq">Tree 1 asks two questions about a person's ordinary weeks: how regular they were, the share of workdays spent at the same daytime place, and how far that place is from home. The strip under each question shows where the people who reach it fall, with the cut as a black line.</span></li>
+    <li><button type="button" aria-describedby="dt-tb"><span class="sw" style="background:#e8412a"></span>routine broke</button><span class="opener-tip" role="tooltip" id="dt-tb">In the emergency, this person's days stopped matching the habits of their ordinary weeks, by more than chance allows.</span></li>
+    <li><button type="button" aria-describedby="dt-th"><span class="sw" style="background:#1f4fd8"></span>routine held</button><span class="opener-tip" role="tooltip" id="dt-th">In the emergency, this person's days still matched the habits of their ordinary weeks.</span></li>
+    <li><button type="button" aria-describedby="dt-tf"><span style="color:#c7321d">flagged</span>&nbsp;pile</button><span class="opener-tip" role="tooltip" id="dt-tf">The tree flags a pile when more of its training people broke than among all training people (19.2%). Only the pile of regular people who travel to their daytime place passes that bar.</span></li>
+    <li class="hint">Point at a bead, or tap it, to see one person.</li>
+  </ul>
+  <ul class="opener-legend" id="dt-leg-kind" hidden>
+    {KINDS.map(([name, col, tip], i) => (
+      <li><button type="button" aria-describedby={`dt-tk${i}`}><span class="sw" style={`background:${col}`}></span>{name}</button><span class="opener-tip" role="tooltip" id={`dt-tk${i}`}>{tip}</span></li>
+    ))}
+    <li class="hint">The six kinds come from the Clustering tab; the tree never saw them.</li>
+  </ul>
+  <p class="opener-line" id="dt-line"></p>
+</figure>
+
+<script>
+  import D from "../data/drop_tree.json";
+  const fig = document.getElementById("drop-tree");
+  const cv = fig.querySelector(".dt-canvas"), ctx = cv.getContext("2d"), hover = fig.querySelector("#dt-hover");
+  const big = fig.querySelector("#dt-big"), small = fig.querySelector("#dt-small"), line = fig.querySelector("#dt-line");
+  const N = D.leaf.length, LEAF = Uint8Array.from(D.leaf, (c) => +c), BROKE = Uint8Array.from(D.broke, (c) => +c), KIND = Uint8Array.from(D.kind, (c) => +c);
+  const REG = D.reg, COM = D.com, CUT = D.cuts, CMAX = D.cmax;
+  const KC = ["#2a78d6", "#4a3aa7", "#1baf7a", "#eda100", "#e87ba4", "#eb6834"], KN = D.kinds;
+  const ONE = ["Far roamer", "Mid-range mover", "Regular commuter", "Local regular", "Weekend mover", "Homebody"];
+  const COB = "#1f4fd8", VER = "#e8412a", INK = "#14161a", MUTED = "#5b616b", RULE = "#d9dad6";
+  const NAME = [["less regular,", "near home"], ["less regular,", "travels"], ["regular,", "near home"], ["regular,", "travels"]];
+  const FLAG = [false, false, false, true];
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (v) => Math.round(v).toLocaleString("en-US"), pc = (v) => (100 * v).toFixed(1) + "%";
+  const cnt = [0, 0, 0, 0], brk = [0, 0, 0, 0], kc = [0, 1, 2, 3].map(() => [0, 0, 0, 0, 0, 0]);
+  for (let i = 0; i < N; i++) { cnt[LEAF[i]]++; brk[LEAF[i]] += BROKE[i]; kc[LEAF[i]][KIND[i]]++; }
+  const totB = brk.reduce((a, b) => a + b, 0);
+  let colour = "broke";
+
+  // ---------- geometry ----------
+  let W = 0, H = 0, dpr = 1, G = null, pitch = 3;
+  const sx = new Float32Array(N), sy = new Float32Array(N), cx = new Float32Array(N), cy = new Float32Array(N);
+  const fx = new Float32Array(N), fy = new Float32Array(N), mv = new Float64Array(N);
+  const FALL = 1500, SPREAD = 4200, MOVE = 900;
+  function pileHeight(p, bw) { const cols = Math.max(1, Math.floor(bw / p)); return Math.ceil(Math.max(...cnt) / cols) * p; }
+  function geometry() {
+    const w = cv.getBoundingClientRect().width, narrow = w < 600;
+    if (narrow) {                                   // phones: the tree is shorter and the canvas grows so the beads stay visible
+      const bw = (w - 16 - 24) / 4, need = pileHeight(2.5, bw);
+      cv.style.height = Math.ceil(206 + need + 12 + 58) + "px";
+    } else cv.style.height = "";
+    const r = cv.getBoundingClientRect(); dpr = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const sw1 = Math.min(380, W * (narrow ? 0.6 : 0.4)), sw2 = Math.min(300, W * (narrow ? 0.42 : 0.33));
+    const y1 = narrow ? 34 : 112, y2 = narrow ? 128 : 210;
+    const pad = narrow ? 8 : 20, gap = narrow ? 8 : 18, bw = (W - 2 * pad - 3 * gap) / 4;
+    G = { narrow, stripH: narrow ? 28 : 36, n1: { x: W / 2, y: y1, w: sw1 }, n2: [{ x: W * 0.25, y: y2, w: sw2 }, { x: W * 0.75, y: y2, w: sw2 }],
+          binTop: narrow ? 206 : 310, binBot: H - (narrow ? 58 : 58), bins: [0, 1, 2, 3].map((l) => ({ x: pad + l * (bw + gap), w: bw })) };
+  }
+  // where every bead sits: by outcome (broke at the bottom of its pile) or by kind of mover
+  function piles() {
+    const key = (i) => (colour === "broke" ? 1 - BROKE[i] : KIND[i]);
+    const idx = Array.from({ length: N }, (_, i) => i).sort((a, b) => key(a) - key(b) || a - b), mem = [[], [], [], []];
+    for (const i of idx) mem[LEAF[i]].push(i);
+    const avail = G.binBot - G.binTop - 6; pitch = 1;
+    for (let q = 7; q >= 0.8; q -= 0.05) if (pileHeight(q, G.bins[0].w) <= avail) { pitch = q; break; }
+    const cols = Math.max(1, Math.floor(G.bins[0].w / pitch));
+    mem.forEach((m, l) => { const b = G.bins[l], x0 = b.x + (b.w - cols * pitch) / 2; m.forEach((i, j) => { sx[i] = x0 + (j % cols) * pitch; sy[i] = G.binBot - (Math.floor(j / cols) + 1) * pitch; }); });
+  }
+  const ease = (s) => (s < 0.5 ? 2 * s * s : 1 - Math.pow(-2 * s + 2, 2) / 2);
+  function fallPos(i, u) {
+    const l = LEAF[i], n2 = G.n2[l >= 2 ? 1 : 0], b = G.bins[l], j = ((i * 7919) % 97) / 97 - 0.5;
+    const P = [[G.n1.x + j * 40, -10], [G.n1.x + j * 18, G.n1.y + G.stripH + 4], [n2.x + j * 14, n2.y + G.stripH + 4], [b.x + b.w / 2 + j * b.w * 0.6, G.binTop], [sx[i], sy[i]]];
+    const k = Math.min(3, Math.floor(u * 4)), f = u * 4 - k;
+    return [P[k][0] + (P[k + 1][0] - P[k][0]) * f, P[k][1] + (P[k + 1][1] - P[k][1]) * f];
+  }
+
+  // ---------- a clock that only runs while the figure is on screen ----------
+  let vt = 0, lastNow = 0, dropAt = null, visible = false;
+  const released = (i) => vt - (dropAt + (i / N) * SPREAD);
+  const landed = (i) => dropAt !== null && released(i) >= FALL;
+
+  // ---------- drawing ----------
+  const sReg = (v) => v, sCom = (v) => Math.log1p(Math.min(CMAX, v)) / Math.log1p(CMAX);
+  function strip(n, S, cut, label, scale, ends) {
+    const x0 = n.x - n.w / 2, h = G.stripH, nb = S.held.length, bw = n.w / nb, sq = scale === sCom;
+    let mx = 1; for (let k = 0; k < nb; k++) mx = Math.max(mx, S.held[k] + S.broke[k]);
+    ctx.fillStyle = "#fff"; ctx.fillRect(x0 - 6, n.y - 22, n.w + 12, h + 40);
+    ctx.fillStyle = INK; ctx.font = `500 ${G.narrow ? 11 : 12.5}px Chivo, Arial, sans-serif`; ctx.textAlign = "center"; ctx.fillText(label, n.x, n.y - 8);
+    for (let k = 0; k < nb; k++) {
+      const tot = S.held[k] + S.broke[k], ht = (sq ? Math.sqrt(tot / mx) : tot / mx) * h, hb = tot ? (ht * S.broke[k]) / tot : 0;
+      if (colour === "broke") { ctx.fillStyle = VER; ctx.fillRect(x0 + k * bw, n.y + h - hb, bw - 0.6, hb); ctx.fillStyle = "#9db0ec"; ctx.fillRect(x0 + k * bw, n.y + h - ht, bw - 0.6, ht - hb); }
+      else { ctx.fillStyle = "#c9cbc6"; ctx.fillRect(x0 + k * bw, n.y + h - ht, bw - 0.6, ht); }
+    }
+    ctx.fillStyle = RULE; ctx.fillRect(x0, n.y + h, n.w, 1);
+    const c = x0 + scale(cut) * n.w; ctx.fillStyle = INK; ctx.fillRect(c - 1, n.y - 3, 2, h + 7);
+    ctx.font = `400 ${G.narrow ? 9.5 : 10.5}px "Chivo Mono", monospace`; ctx.fillStyle = MUTED;
+    ctx.textAlign = "left"; ctx.fillText(ends[0], x0, n.y + h + 14); ctx.textAlign = "right"; ctx.fillText(ends[1], x0 + n.w, n.y + h + 14);
+  }
+  let sel = -1;
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = RULE; ctx.lineWidth = 1; ctx.beginPath();
+    for (const n2 of G.n2) { ctx.moveTo(G.n1.x, G.n1.y + G.stripH + 18); ctx.lineTo(n2.x, n2.y - 24); }
+    G.n2.forEach((n2, s) => { for (const l of [2 * s, 2 * s + 1]) { const b = G.bins[l]; ctx.moveTo(n2.x, n2.y + G.stripH + 18); ctx.lineTo(b.x + b.w / 2, G.binTop - 8); } });
+    ctx.stroke();
+    ctx.fillStyle = MUTED; ctx.font = `400 ${G.narrow ? 10 : 11}px Chivo, Arial, sans-serif`; ctx.textAlign = "center";
+    const ym = (G.n1.y + G.stripH + 18 + G.n2[0].y - 24) / 2;
+    ctx.fillText("no", (G.n1.x + G.n2[0].x) / 2 - 12, ym); ctx.fillText("yes", (G.n1.x + G.n2[1].x) / 2 + 14, ym);
+    const sz = Math.max(0.9, pitch * (pitch > 2.2 ? 0.8 : 0.9));
+    let moving = false, down = 0;
+    const lc = [0, 0, 0, 0], lb = [0, 0, 0, 0];
+    if (dropAt !== null) for (let i = 0; i < N; i++) {
+      const u = released(i) / FALL;
+      if (u < 0) { moving = true; cx[i] = NaN; continue; }               // not released yet
+      let x = sx[i], y = sy[i];
+      if (u < 1) { [x, y] = fallPos(i, ease(u)); moving = true; }        // falling
+      else {                                                            // in its pile, perhaps moving to a new place in it
+        if (mv[i] && vt - mv[i] < MOVE) { const e = ease((vt - mv[i]) / MOVE), c = Math.min(fy[i], sy[i]) - 60; x = fx[i] + (sx[i] - fx[i]) * e; y = (1 - e) * (1 - e) * fy[i] + 2 * (1 - e) * e * c + e * e * sy[i]; moving = true; }
+        down++; lc[LEAF[i]]++; lb[LEAF[i]] += BROKE[i];
+      }
+      cx[i] = x; cy[i] = y;
+      ctx.fillStyle = colour === "broke" ? (BROKE[i] ? VER : COB) : KC[KIND[i]];
+      ctx.fillRect(x, y, sz, sz);
+    }
+    if (sel >= 0) { ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.strokeRect(cx[sel] - 2, cy[sel] - 2, sz + 4, sz + 4); }
+    strip(G.n1, D.strips[0], CUT[0], "Regularity above 0.73?", sReg, ["0", "1"]);
+    strip(G.n2[0], D.strips[1], CUT[1], "Commute over 0.85 km?", sCom, ["0 km", "120 km"]);
+    strip(G.n2[1], D.strips[2], CUT[2], "Commute over 0.60 km?", sCom, ["0 km", "120 km"]);
+    labels(lc, lb); readout(down);
+    return moving;
+  }
+  function topKind(l) { const k = kc[l].indexOf(Math.max(...kc[l])); return [k, kc[l][k] / cnt[l]]; }
+  function labels(lc, lb) {
+    G.bins.forEach((b, l) => {
+      const c = b.x + b.w / 2, y0 = G.binBot + (G.narrow ? 14 : 16);
+      ctx.fillStyle = RULE; ctx.fillRect(b.x, G.binBot + 1, b.w, 1);
+      ctx.textAlign = "center"; ctx.fillStyle = INK; ctx.font = `500 ${G.narrow ? 10.5 : 12}px Chivo, Arial, sans-serif`;
+      if (G.narrow) { ctx.fillText(NAME[l][0], c, y0); ctx.fillText(NAME[l][1], c, y0 + 12.5); } else ctx.fillText(NAME[l].join(" "), c, y0);
+      ctx.font = `500 ${G.narrow ? 10.5 : 11.5}px Chivo, Arial, sans-serif`; ctx.fillStyle = FLAG[l] ? "#c7321d" : MUTED;
+      ctx.fillText(FLAG[l] ? "flagged" : "not flagged", c, y0 + (G.narrow ? 26 : 32));
+      if (!lc[l]) return;
+      let txt;
+      if (colour === "broke") txt = G.narrow ? `${Math.round((100 * lb[l]) / lc[l])}% broke` : `${fmt(lc[l])} people · ${pc(lb[l] / lc[l])} broke`;
+      else { const [k, s] = topKind(l); txt = G.narrow ? `${Math.round(100 * s)}% ${KN[k].split(" ")[0]}` : `${fmt(lc[l])} people · ${Math.round(100 * s)}% ${KN[k]}`; }
+      if (G.narrow) { ctx.font = '500 10.5px "Chivo Mono", monospace'; ctx.fillStyle = INK; ctx.fillText(txt, c, tops[l] - 5); }
+      else { ctx.font = '400 11px "Chivo Mono", monospace'; ctx.fillStyle = MUTED; ctx.fillText(txt, c, y0 + 16); }
+    });
+  }
+  const tops = [0, 0, 0, 0];
+  function measureTops() { const t = [Infinity, Infinity, Infinity, Infinity]; for (let i = 0; i < N; i++) t[LEAF[i]] = Math.min(t[LEAF[i]], sy[i]); for (let l = 0; l < 4; l++) tops[l] = t[l]; }
+  function readout(down) {
+    if (dropAt === null) { big.textContent = fmt(N); small.textContent = "people about to fall through the tree"; return; }
+    if (down < N) { big.textContent = fmt(down); small.textContent = `of ${fmt(N)} people sorted by the tree's two questions`; return; }
+    if (colour === "broke") { big.textContent = pc(brk[3] / cnt[3]); small.textContent = `of the flagged pile broke, against ${pc((totB - brk[3]) / (N - cnt[3]))} of everyone else`; }
+    else { const rc = kc[3][2] / cnt[3], all = kc.reduce((a, k) => a + k[2], 0) / N; big.textContent = Math.round(100 * rc) + "%"; small.textContent = `of the flagged pile are regular commuters, against ${Math.round(100 * all)}% of everyone`; }
+  }
+  function words() {
+    if (colour === "broke") {
+      line.innerHTML = `The tree flags one pile: regular people who travel to their daytime place, <span class="num">${fmt(cnt[3])}</span> people or <span class="num">${pc(cnt[3] / N)}</span> of everyone. <span class="num">${fmt(brk[3])}</span> of them broke, so checking all of them finds <span class="num">${pc(brk[3] / totB)}</span> of the broken routines; the other <span class="num">${fmt(totB - brk[3])}</span> sit in piles the tree lets pass.`;
+    } else {
+      const two = (l) => { const o = kc[l].map((v, j) => [v, j]).sort((a, b) => b[0] - a[0]); return `${KN[o[0][1]]} (<span class="num">${Math.round((100 * o[0][0]) / cnt[l])}%</span>) and ${KN[o[1][1]]} (<span class="num">${Math.round((100 * o[1][0]) / cnt[l])}%</span>)`; };
+      line.innerHTML = `The flagged pile is mostly ${two(3)}. Regular people who stay near home are mostly ${two(2)}; less regular people are mostly ${two(1)} when they travel and ${two(0)} when they stay near home.`;
+    }
+  }
+
+  // ---------- one person under the pointer ----------
+  function describe(i) {
+    const fate = BROKE[i] ? "Routine broke in the emergency." : "Routine held in the emergency.";
+    const where = COM[i] === 0 ? "a daytime place in the home square" : `a daytime place ${(COM[i] / 10).toFixed(1)} km from home`;
+    return `<b>${ONE[KIND[i]]}</b><br>At the same daytime place on ${REG[i]}% of workdays, ${where}.<br>${fate}<br>Pile: ${NAME[LEAF[i]].join(" ")}${FLAG[LEAF[i]] ? ", flagged" : ""}.`;
+  }
+  function nearest(x, y) {
+    let best = -1, bd = (Math.max(pitch, 2) * 2.4) ** 2;
+    for (let i = 0; i < N; i++) { if (!landed(i)) continue; const dx = cx[i] + pitch / 2 - x, dy = cy[i] + pitch / 2 - y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
+    return best;
+  }
+  function showHover(i, x, y) {
+    sel = i; if (i < 0) { hover.style.display = "none"; request(); return; }
+    hover.innerHTML = describe(i); hover.style.display = "block";
+    const w = hover.offsetWidth, h = hover.offsetHeight;
+    hover.style.left = cv.offsetLeft + Math.min(W - w - 6, Math.max(6, x + 14)) + "px"; hover.style.top = cv.offsetTop + (y - h - 12 < 4 ? y + 16 : y - h - 12) + "px";
+    request();
+  }
+  cv.addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse") return; const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; showHover(nearest(x, y), x, y); });
+  cv.addEventListener("pointerleave", () => showHover(-1));
+  cv.addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") return; const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; showHover(nearest(x, y), x, y); });
+
+  // ---------- legends: tap to open a short explanation, tap anywhere else to close ----------
+  const legBtns = Array.from(fig.querySelectorAll(".opener-legend button"));
+  function place(b) { const tip = b.nextElementSibling; tip.style.left = "0px"; const r = tip.getBoundingClientRect(), over = r.right - (document.documentElement.clientWidth - 8); if (over > 0) tip.style.left = -over + "px"; }
+  legBtns.forEach((b) => {
+    b.addEventListener("click", (e) => { e.stopPropagation(); const open = b.getAttribute("aria-expanded") !== "true"; legBtns.forEach((x) => x.setAttribute("aria-expanded", "false")); b.setAttribute("aria-expanded", String(open)); place(b); });
+    b.addEventListener("mouseenter", () => place(b));
+  });
+  document.addEventListener("click", () => legBtns.forEach((x) => x.setAttribute("aria-expanded", "false")));
+
+  // ---------- animation ----------
+  let raf = 0;
+  function frame(now) {
+    raf = 0;
+    const dt = Math.min(now - lastNow, 50); lastNow = now;
+    if (visible && !document.hidden) vt += dt;
+    if (draw() && visible) raf = requestAnimationFrame(frame);
+  }
+  function request() { if (!raf) { lastNow = performance.now(); raf = requestAnimationFrame(frame); } }
+  function drop() {
+    started = true; clearTimeout(dwell); showHover(-1); piles(); measureTops(); mv.fill(0);
+    dropAt = reduced ? vt - SPREAD - FALL : vt;       // with reduced motion every bead is already in its pile
+    draw(); request();
+  }
+  function recolour() {
+    for (let i = 0; i < N; i++) { fx[i] = cx[i]; fy[i] = cy[i]; }
+    piles(); measureTops();
+    for (let i = 0; i < N; i++) mv[i] = landed(i) && !reduced && fx[i] === fx[i] ? vt || 1e-6 : 0;
+    fig.querySelector("#dt-leg-broke").hidden = colour !== "broke"; fig.querySelector("#dt-leg-kind").hidden = colour === "broke";
+    words(); draw(); request();
+  }
+  fig.querySelector("#dt-again").addEventListener("click", drop);
+  fig.querySelectorAll(".opener-toggle button").forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.c === colour) return; colour = b.dataset.c;
+    fig.querySelectorAll(".opener-toggle button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    recolour();
+  }));
+  addEventListener("resize", () => { geometry(); piles(); measureTops(); mv.fill(0); draw(); request(); });
+
+  // ---------- start when the reader is looking: most of the figure on screen for a moment ----------
+  let started = false, dwell = 0, first = true;
+  const io = new IntersectionObserver((es) => {
+    const e = es[es.length - 1];
+    visible = e.isIntersecting && e.intersectionRatio > 0.2;
+    const enough = e.intersectionRatio >= 0.6 || e.intersectionRect.height >= 0.6 * innerHeight;
+    if (!started) { clearTimeout(dwell); if (enough) dwell = setTimeout(drop, first ? 1000 : 350); }
+    else if (visible) request();
+    first = false;
+  }, { threshold: Array.from({ length: 21 }, (_, i) => i / 20) });
+  geometry(); piles(); measureTops(); words(); draw();      // before the first drop the piles are empty
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { geometry(); piles(); measureTops(); draw(); io.observe(cv); });
+</script>
+
+<style is:global>
+  .dt-canvas { display: block; width: 100%; height: 40rem; touch-action: pan-y; }
+  #drop-tree .btn-outline { font: 500 0.85rem/1 var(--sans); padding: 0.55rem 0.8rem; background: var(--ground); color: var(--ink); border: 1px solid var(--ink); border-radius: 0; cursor: pointer; }
+  @media (max-width: 37.49rem) {
+    #drop-tree .dt-stage { display: flex; flex-direction: column; }
+    #drop-tree .opener-toggle { position: static; order: -2; align-self: flex-start; margin: 0.75rem 0.75rem 0; }
+    #drop-tree .opener-read { position: static; order: -1; max-width: none; margin: 0.75rem 0.75rem 0.25rem; }
+  }
+</style>

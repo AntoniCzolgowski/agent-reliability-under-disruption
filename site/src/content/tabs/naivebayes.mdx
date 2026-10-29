@@ -4,6 +4,7 @@ description: "Telling an emergency day from an ordinary one, half hour by half h
 ---
 
 import Figure from "../../components/Figure.astro";
+import AlarmField from "../../components/AlarmField.astro";
 import o06 from "../../assets/figures/o06_nb_reading_a_day.png";
 import o07 from "../../assets/figures/o07_nb_smoothing.png";
 import o08 from "../../assets/figures/o08_nb_bernoulli.png";
@@ -22,6 +23,8 @@ import f39 from "../../assets/figures/f39_alarm.png";
 import f45 from "../../assets/figures/f45_chronos.png";
 
 <p class="lede">Without context, a day of the emergency looks much like an ordinary day. Naive Bayes, a simple classifier, picks up the difference from where and when each person was seen, half hour by half hour. Read person by person, the same method lets a city watch a shock spread through daily life one person at a time: when it reached each of them, whom it reached first, and whose change a tool built for the average person would miss.</p>
+
+<AlarmField />
 
 ## Overview
 

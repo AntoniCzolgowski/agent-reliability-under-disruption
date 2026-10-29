@@ -215,6 +215,19 @@ span.todo { border-left: 0; padding: 0; }
   .opener-toggle button { padding: 0.45rem 0.6rem; font-size: 0.76rem; }
   .flow-svg text.h { display: none; }
 }
+/* Opener legend (NaiveBayes, DecTrees): a swatch and a short name; hover, focus or a tap shows one short explanation above it.
+   A hover card over the stage names the one person under the pointer. Square, 1px ink, no shadow, like the rest of the site. */
+.opener-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1.25rem; list-style: none; padding: 0; margin: 0.85rem 0 0; font: 400 0.9rem/1.35 var(--sans); }
+.opener-legend[hidden] { display: none; }
+.opener-legend li { position: relative; }
+.opener-legend button { display: inline-flex; align-items: center; gap: 0.45rem; font: inherit; color: var(--ink); background: none; border: 0; padding: 0.25rem 0; cursor: help; text-decoration: underline dotted var(--muted); text-underline-offset: 0.25em; }
+.opener-legend .sw { flex: none; width: 0.75rem; height: 0.75rem; }
+.opener-legend .hint { color: var(--muted); font-size: 0.84rem; }
+.opener-tip { position: absolute; left: 0; bottom: calc(100% + 0.45rem); z-index: 6; width: max-content; max-width: min(19rem, 84vw); background: #fff; border: 1px solid var(--ink); padding: 0.55rem 0.7rem; font: 400 0.82rem/1.45 var(--sans); color: var(--ink); display: none; pointer-events: none; }
+.opener-legend li:hover .opener-tip, .opener-legend button:focus-visible + .opener-tip, .opener-legend button[aria-expanded="true"] + .opener-tip { display: block; }
+.opener-hover { position: absolute; z-index: 5; pointer-events: none; display: none; max-width: 16rem; background: #fff; border: 1px solid var(--ink); padding: 0.45rem 0.6rem; font: 400 0.8rem/1.4 var(--sans); color: var(--ink); }
+.opener-hover b { font-weight: 500; }
+@media (min-width: 64rem) { main.tab .opener-legend { font-size: 0.95rem; } }
 
 /* Tabs inside a page (Research). Styled like the site navigation: the current tab carries a 2px ink underline.
    Without JavaScript the tabs are plain links and every section shows in order. */

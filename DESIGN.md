@@ -212,6 +212,16 @@ Square corners throughout (0 radius): buttons, toggles, selects, figure frames, 
 ### Quoted prompt
 - Text given to a model is quoted as data: Chivo Mono 0.86rem with a 1px Ink rule on the left.
 
+### Opener legend (NaiveBayes, DecTrees)
+- One row under the opener, the only key to it: a swatch and a short name for each mark, every name a button with a dotted underline. Hover, keyboard focus or a tap opens one short explanation above it in a square white box with a 1px Ink border; a tap anywhere else closes it. A muted hint at the end says that pointing at a mark shows one person. No second legend in a note or caption.
+
+### Hover card
+- Over an opener's stage, the mark under the pointer gets a 1.5px Ink outline and a small square card (white, 1px Ink border, Chivo 0.8rem) describes that one anonymous person: kind of mover, the facts behind the mark's place, what happened to their routine. On touch screens a tap shows it.
+
+### Openers that move
+- An opener that plays by itself starts only when most of it is on screen (60% of the figure, or 60% of the window for a tall one) and the reader has stayed a moment: 1 s after the page loads, 0.35 s after a scroll. Its clock stops while it is off screen and resumes when it returns, so nobody misses the start. With reduced motion it shows the end state.
+- On narrow screens an opener keeps its marks visible rather than shrinking them: the alarm field turns its columns into bands, and the falling tree moves its switch and readout above the canvas and grows taller.
+
 ### Placeholder for Antoni's own copy
 - Chivo Mono 0.85rem in Vermilion Ink with a 2px Vermilion rule on the left; it marks text he writes himself and must not ship to a graded part unfilled.
 

@@ -1,0 +1,251 @@
+---
+// The alarm, person by person: the opener of the NaiveBayes tab. Every evaluation person is a square, people whose routine broke
+// on top of their column. Each person's alarm adds up, day by day, how much their days look like the emergency and rings past a
+// line (allowance 0.2, line 9.96, as in the Results). Play runs days 45 to 74 and the squares light up as alarms ring.
+// Desktop: one column per group. Narrow screens: one band per group, so the squares stay big enough to see.
+// Data: src/data/alarm_field.json from code/export_part3_viz.py.
+import data from "../data/alarm_field.json";
+const n = data.broke.length, codes = data.alarm.split("").map((c: string) => parseInt(c, 36));
+let nb = 0, caught = 0;
+for (let i = 0; i < n; i++) if (data.broke[i] === "1") { nb++; if (codes[i] >= 16) caught++; }
+const pct = (v: number) => (100 * v).toFixed(1) + "%";
+const alt = `${n.toLocaleString("en-US")} evaluation people as squares in five columns from the least to the most regular, people whose routine broke at the top of each column. By day 74 the alarm has caught ${pct(caught / nb)} of the broken routines, most of them in the most regular columns and almost none in the least regular.`;
+---
+
+<figure class="opener" id="alarm-field">
+  <div class="opener-stage af-stage">
+    <canvas class="af-canvas" role="img" aria-label={alt}></canvas>
+    <div class="opener-read" aria-live="polite">
+      <div class="big" id="af-big">Day 45</div>
+      <div class="small" id="af-small">ordinary days: any alarm now is a false alarm</div>
+    </div>
+    <div class="opener-toggle" role="group" aria-label="Group people by">
+      <button type="button" data-g="fifth" aria-pressed="true">Regularity</button>
+      <button type="button" data-g="kind" aria-pressed="false">Kind</button>
+    </div>
+    <div class="opener-hover" id="af-hover" aria-hidden="true"></div>
+  </div>
+  <div class="opener-bar">
+    <button type="button" class="opener-play" id="af-play" aria-label="Play days 45 to 74">
+      <svg class="ic-play" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1 L11 6 L2 11 Z"></path></svg>
+      <svg class="ic-pause" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1 H5 V11 H2 Z M7 1 H10 V11 H7 Z"></path></svg>
+    </button>
+    <label class="opener-scrub-label"><span class="visually-hidden">Day</span><input type="range" class="opener-scrub" id="af-scrub" min="45" max="74" step="0.01" value="45" /></label>
+  </div>
+  <ul class="opener-legend">
+    <li><button type="button" aria-describedby="af-tip0" id="af-cols">columns: least to most regular</button><span class="opener-tip" role="tooltip" id="af-tip0">Regularity is the share of workdays on which a person spends the middle of the day at the same daytime place. Each column holds a fifth of the people.</span></li>
+    <li><button type="button" aria-describedby="af-tip1"><span class="sw" style="background:#8d939b"></span>routine broke</button><span class="opener-tip" role="tooltip" id="af-tip1">In the emergency, this person's days stopped matching the habits of their ordinary weeks, by more than chance allows. It is known only after the fact.</span></li>
+    <li><button type="button" aria-describedby="af-tip2"><span class="sw" style="background:#dddeda"></span>routine held</button><span class="opener-tip" role="tooltip" id="af-tip2">In the emergency, this person's days still matched the habits of their ordinary weeks.</span></li>
+    <li><button type="button" aria-describedby="af-tip3"><span class="sw" style="background:#e8412a"></span>alarm in the emergency</button><span class="opener-tip" role="tooltip" id="af-tip3">The alarm rang on one of days 60 to 74. Each person's alarm adds up, day by day, how much their days look like an emergency day rather than one of their own ordinary days, and rings when the total passes a line.</span></li>
+    <li><button type="button" aria-describedby="af-tip4"><span class="sw" style="background:#1f4fd8"></span>false alarm</button><span class="opener-tip" role="tooltip" id="af-tip4">The alarm rang on an ordinary day, 45 to 59, before anything had happened. The line is set so that only a few people's alarms ring on ordinary days.</span></li>
+    <li class="hint">Point at a square, or tap it, to see one person.</li>
+  </ul>
+  <p class="opener-line" id="af-line"></p>
+</figure>
+
+<script>
+  import D from "../data/alarm_field.json";
+  const fig = document.getElementById("alarm-field");
+  const cv = fig.querySelector(".af-canvas"), ctx = cv.getContext("2d"), hover = fig.querySelector("#af-hover");
+  const bigEl = fig.querySelector("#af-big"), smallEl = fig.querySelector("#af-small"), lineEl = fig.querySelector("#af-line");
+  const playBtn = fig.querySelector("#af-play"), scrub = fig.querySelector("#af-scrub"), colsLab = fig.querySelector("#af-cols"), colsTip = fig.querySelector("#af-tip0");
+  const N = D.broke.length, KIND = Uint8Array.from(D.kind, (c) => +c), FIFTH = Uint8Array.from(D.fifth, (c) => +c), BROKE = Uint8Array.from(D.broke, (c) => +c);
+  const ALARM = Uint8Array.from(D.alarm, (c) => { const v = parseInt(c, 36); return v ? v + 44 : 0; });
+  const KC = ["#2a78d6", "#4a3aa7", "#1baf7a", "#eda100", "#e87ba4", "#eb6834"];
+  const ONE = ["far roamer", "mid-range mover", "regular commuter", "local regular", "weekend mover", "homebody"];
+  const FIFTHS = ["least regular", "2nd", "3rd", "4th", "most regular"], FIFTH_LONG = ["the least regular fifth", "the 2nd fifth by regularity", "the 3rd fifth by regularity", "the 4th fifth by regularity", "the most regular fifth"];
+  const COB = "#1f4fd8", VER = "#e8412a", HELD = "#dddeda", BRK = "#8d939b", INK = "#14161a", MUTED = "#5b616b";
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (v) => Math.round(v).toLocaleString("en-US"), pc = (v) => (100 * v).toFixed(1) + "%";
+  const totB = BROKE.reduce((a, b) => a + b, 0);
+  let group = "fifth", t = 45, playing = false, autoPaused = false, visible = false, hold = 0, sel = -1;
+  const lit = new Float64Array(N);
+
+  // ---------- layout: columns on wide screens, bands on narrow ones ----------
+  let W = 0, H = 0, dpr = 1, pitch = 4, narrow = false, blocks = [];
+  const pos = new Float32Array(N * 2);
+  function members(g) {
+    const m = Array.from({ length: g === "fifth" ? 5 : 6 }, () => ({ b: [], h: [] }));
+    for (let p = 0; p < N; p++) (BROKE[p] ? m[g === "fifth" ? FIFTH[p] : KIND[p]].b : m[g === "fifth" ? FIFTH[p] : KIND[p]].h).push(p);
+    return m;
+  }
+  const BAND = { top: 86, label: 17, gap: 13, bottom: 6, pitch: 3.4, pad: 12 };
+  function bandRows(m, cols) { let r = 1; while (Math.ceil(m.b.length / r) + 2 + Math.ceil(m.h.length / r) > cols) r++; return r; }
+  function bandHeight(g, w) {
+    const cols = Math.floor((w - 2 * BAND.pad) / BAND.pitch);
+    return BAND.top + members(g).reduce((s, m) => s + BAND.label + bandRows(m, cols) * BAND.pitch + BAND.gap, 0) + BAND.bottom;
+  }
+  function layout() {
+    const w = cv.getBoundingClientRect().width;
+    narrow = w < 560;
+    cv.style.height = narrow ? Math.ceil(Math.max(bandHeight("fifth", w), bandHeight("kind", w))) + "px" : "";
+    const r = cv.getBoundingClientRect(); dpr = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const mem = members(group); blocks = [];
+    if (narrow) {
+      pitch = BAND.pitch; const cols = Math.floor((W - 2 * BAND.pad) / pitch); let y = BAND.top;
+      mem.forEach((m, g) => {
+        const rows = bandRows(m, cols), cb = Math.ceil(m.b.length / rows), x0 = BAND.pad, yb = y + BAND.label;
+        m.b.forEach((p, j) => { pos[2 * p] = x0 + Math.floor(j / rows) * pitch; pos[2 * p + 1] = yb + (j % rows) * pitch; });
+        const xh = x0 + (cb + 2) * pitch;
+        m.h.forEach((p, j) => { pos[2 * p] = xh + Math.floor(j / rows) * pitch; pos[2 * p + 1] = yb + (j % rows) * pitch; });
+        blocks.push({ b: m.b, lx: x0, ly: y + 11, rx: W - BAND.pad, split: x0 + (cb + 1) * pitch, y0: yb, y1: yb + rows * pitch });
+        y = yb + rows * pitch + BAND.gap;
+      });
+      return;
+    }
+    const ng = mem.length, top = 96, bottom = 46, padX = 18, gap = 16, colW = (W - 2 * padX - gap * (ng - 1)) / ng, availH = H - top - bottom;
+    pitch = 1;
+    for (let q = 9; q >= 1; q -= 0.1) {
+      const c = Math.floor(colW / q); if (c < 1) continue;
+      if (Math.max(...mem.map((m) => (Math.ceil(m.b.length / c) + Math.ceil(m.h.length / c)) * q + 7)) <= availH) { pitch = q; break; }
+    }
+    const nc = Math.max(1, Math.floor(colW / pitch));
+    mem.forEach((m, g) => {
+      const x0 = padX + g * (colW + gap) + (colW - nc * pitch) / 2;
+      m.b.forEach((p, i) => { pos[2 * p] = x0 + (i % nc) * pitch; pos[2 * p + 1] = top + Math.floor(i / nc) * pitch; });
+      const yb = top + Math.ceil(m.b.length / nc) * pitch + 7;
+      m.h.forEach((p, i) => { pos[2 * p] = x0 + (i % nc) * pitch; pos[2 * p + 1] = yb + Math.floor(i / nc) * pitch; });
+      blocks.push({ b: m.b, x0, w: nc * pitch, top, ysplit: yb - 3.5 });
+    });
+  }
+
+  // ---------- drawing ----------
+  const ease = (s) => 1 - Math.pow(1 - s, 3);
+  function draw(now) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    const day = Math.floor(t + 1e-9), sz = Math.max(1, pitch * (pitch > 2.5 ? 0.78 : 0.9));
+    for (let p = 0; p < N; p++) {
+      const a = ALARM[p]; let c = BROKE[p] ? BRK : HELD, s = sz;
+      if (a && a <= day) { c = a <= 59 ? COB : VER; if (lit[p] && !reduced) { const u = (now - lit[p]) / 450; if (u < 1) s = sz * (1 + 1.2 * (1 - ease(u))); } }
+      ctx.fillStyle = c; ctx.fillRect(pos[2 * p] + (sz - s) / 2, pos[2 * p + 1] + (sz - s) / 2, s, s);
+    }
+    if (sel >= 0) { ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.strokeRect(pos[2 * sel] - 2, pos[2 * sel + 1] - 2, sz + 4, sz + 4); }
+    const names = group === "fifth" ? FIFTHS : D.kinds;
+    ctx.textBaseline = "alphabetic";
+    blocks.forEach((b, g) => {
+      let caught = 0; for (const p of b.b) { const a = ALARM[p]; if (a >= 60 && a <= day) caught++; }
+      const share = `${Math.round((100 * caught) / Math.max(1, b.b.length))}%`;
+      if (narrow) {
+        ctx.font = "500 12px Chivo, Arial, sans-serif"; ctx.textAlign = "left"; ctx.fillStyle = INK;
+        if (group === "kind") { ctx.fillStyle = KC[g]; ctx.fillRect(b.lx, b.ly - 9, 8, 8); ctx.fillStyle = INK; }
+        ctx.fillText(names[g], b.lx + (group === "kind" ? 12 : 0), b.ly);
+        ctx.font = '400 11px "Chivo Mono", monospace'; ctx.textAlign = "right"; ctx.fillStyle = MUTED; ctx.fillText(`${share} caught`, b.rx, b.ly);
+        ctx.fillStyle = "#e3e3df"; ctx.fillRect(Math.round(b.split), b.y0, 1, b.y1 - b.y0);
+        return;
+      }
+      ctx.fillStyle = "#d9dad6"; ctx.fillRect(b.x0, Math.round(b.ysplit), b.w, 1);
+      const cx = b.x0 + b.w / 2, y = H - 26;
+      if (group === "kind") { ctx.fillStyle = KC[g]; ctx.fillRect(b.x0, y - 12, b.w, 2); }
+      ctx.fillStyle = INK; ctx.font = "500 12px Chivo, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText(names[g], cx, y + 3);
+      ctx.fillStyle = MUTED; ctx.font = '400 11.5px "Chivo Mono", monospace'; ctx.fillText(`${share} caught`, cx, y + 18);
+    });
+    ctx.fillStyle = MUTED; ctx.font = "400 11px Chivo, Arial, sans-serif"; ctx.textAlign = "left";
+    if (narrow) { ctx.fillText("routine broke  |  routine held", BAND.pad, BAND.top - 12); }
+    else ctx.fillText("routine broke", blocks[0].x0, blocks[0].top - 5);
+  }
+  function words() {
+    const day = Math.floor(t + 1e-9);
+    let caught = 0, fa = 0; for (let p = 0; p < N; p++) { const a = ALARM[p]; if (!a || a > day) continue; if (a <= 59) fa++; else if (BROKE[p]) caught++; }
+    bigEl.textContent = "Day " + day;
+    smallEl.textContent = day <= 59 ? "ordinary days: any alarm now is a false alarm" : `emergency, day ${day - 59} of 15`;
+    lineEl.innerHTML = day < 60
+      ? `Days 45 to 59 are ordinary. <span class="num">${fmt(fa)}</span> alarms have rung so far, every one of them a false alarm.`
+      : `By day <span class="num">${day}</span> the alarms have caught <span class="num">${fmt(caught)}</span> of the <span class="num">${fmt(totB)}</span> broken routines (<span class="num">${pc(caught / totB)}</span>), after <span class="num">${fmt(fa)}</span> false alarms on ordinary days.`;
+  }
+
+  // ---------- one person under the pointer ----------
+  function describe(p) {
+    const day = Math.floor(t + 1e-9), a = ALARM[p];
+    const who = `${ONE[KIND[p]][0].toUpperCase() + ONE[KIND[p]].slice(1)}, ${FIFTH_LONG[FIFTH[p]]}`;
+    const fate = BROKE[p] ? "Routine broke in the emergency." : "Routine held in the emergency.";
+    const al = a && a <= day ? (a <= 59 ? `Alarm on day ${a}, before the emergency: a false alarm.` : `Alarm on day ${a}, day ${a - 59} of the emergency.`)
+      : day >= 74 ? "The alarm never rang." : `No alarm by day ${day}.`;
+    return `<b>${who}</b><br>${fate}<br>${al}`;
+  }
+  function nearest(x, y) {
+    let best = -1, bd = (pitch * 2.6) ** 2;
+    for (let p = 0; p < N; p++) { const dx = pos[2 * p] + pitch / 2 - x, dy = pos[2 * p + 1] + pitch / 2 - y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = p; } }
+    return best;
+  }
+  function showHover(p, x, y) {
+    sel = p; if (p < 0) { hover.style.display = "none"; request(); return; }
+    hover.innerHTML = describe(p); hover.style.display = "block";
+    const w = hover.offsetWidth, h = hover.offsetHeight;
+    hover.style.left = Math.min(W - w - 6, Math.max(6, x + 14)) + "px";
+    hover.style.top = (y - h - 12 < 4 ? y + 16 : y - h - 12) + "px";
+    request();
+  }
+  cv.addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse") return; const r = cv.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top; showHover(nearest(x, y), x, y); });
+  cv.addEventListener("pointerleave", () => showHover(-1));
+  cv.addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") return; const r = cv.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top; showHover(nearest(x, y), x, y); });
+
+  // ---------- legend: tap to open a short explanation, tap anywhere else to close ----------
+  const legendBtns = Array.from(fig.querySelectorAll(".opener-legend button"));
+  legendBtns.forEach((b) => b.addEventListener("click", (e) => {
+    e.stopPropagation(); const open = b.getAttribute("aria-expanded") !== "true";
+    legendBtns.forEach((x) => x.setAttribute("aria-expanded", "false")); b.setAttribute("aria-expanded", String(open)); place(b);
+  }));
+  legendBtns.forEach((b) => b.addEventListener("mouseenter", () => place(b)));
+  document.addEventListener("click", () => legendBtns.forEach((x) => x.setAttribute("aria-expanded", "false")));
+  function place(b) {
+    const tip = b.nextElementSibling; tip.style.left = "0px";
+    const r = tip.getBoundingClientRect(), over = r.right - (document.documentElement.clientWidth - 8);
+    if (over > 0) tip.style.left = -over + "px";
+  }
+
+  // ---------- playing ----------
+  function setDay(v, fromPlay) {
+    const before = Math.floor(t + 1e-9); t = Math.max(45, Math.min(74, v)); const after = Math.floor(t + 1e-9);
+    if (fromPlay && after > before) { const now = performance.now(); for (let p = 0; p < N; p++) { const a = ALARM[p]; if (a > before && a <= after) lit[p] = now; } }
+    scrub.value = String(t); words(); if (sel >= 0 && hover.style.display === "block") hover.innerHTML = describe(sel); request();
+  }
+  let last = 0, raf = 0;
+  function frame(now) {
+    raf = 0;
+    if (playing) {
+      const dt = Math.min((now - last) / 1000, 0.1); last = now;
+      if (now < hold) { /* a short pause as the emergency begins */ }
+      else { const next = t + dt * (t < 60 ? 3.2 : 2.1); if (t < 60 && next >= 60 && !reduced) { setDay(60, true); hold = now + 700; } else setDay(next, true); }
+      if (t >= 74) stop();
+    }
+    draw(now);
+    if ((playing || pulsing(now)) && !raf) raf = requestAnimationFrame(frame);
+  }
+  function pulsing(now) { if (reduced) return false; for (let p = 0; p < N; p++) if (lit[p] && now - lit[p] < 450) return true; return false; }
+  function request() { if (!raf) raf = requestAnimationFrame(frame); }
+  function play() { if (t >= 74) setDay(45, false); playing = true; autoPaused = false; playBtn.classList.add("is-playing"); playBtn.setAttribute("aria-label", "Pause"); last = performance.now(); request(); }
+  function stop() { playing = false; playBtn.classList.remove("is-playing"); playBtn.setAttribute("aria-label", "Play days 45 to 74"); }
+  playBtn.addEventListener("click", () => { started = true; clearTimeout(dwell); playing ? stop() : play(); });
+  scrub.addEventListener("input", () => { started = true; clearTimeout(dwell); stop(); setDay(+scrub.value, false); });
+  fig.querySelectorAll(".opener-toggle button").forEach((b) => b.addEventListener("click", () => {
+    group = b.dataset.g; fig.querySelectorAll(".opener-toggle button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    colsLab.textContent = group === "fifth" ? (narrow ? "rows: least to most regular" : "columns: least to most regular") : (narrow ? "rows: six kinds of movers" : "columns: six kinds of movers");
+    colsTip.textContent = group === "fifth" ? "Regularity is the share of workdays on which a person spends the middle of the day at the same daytime place. Each group holds a fifth of the people."
+      : "The six kinds of movers found on the Clustering tab from how people moved in their ordinary weeks, from far roamers to homebodies.";
+    showHover(-1); layout(); request();
+  }));
+  addEventListener("resize", () => { layout(); colsLab.textContent = colsLab.textContent.replace(/^(rows|columns)/, narrow ? "rows" : "columns"); request(); });
+
+  // ---------- start when the reader is looking: most of the figure on screen for a moment; pause while it is away ----------
+  let started = false, dwell = 0, first = true;
+  const io = new IntersectionObserver((es) => {
+    const e = es[es.length - 1];
+    visible = e.isIntersecting && e.intersectionRatio > 0.2;
+    const enough = e.intersectionRatio >= 0.6 || e.intersectionRect.height >= 0.6 * innerHeight;
+    if (!started) {
+      clearTimeout(dwell);
+      if (enough) dwell = setTimeout(() => { started = true; if (reduced) setDay(74, false); else play(); }, first ? 1000 : 350);
+    } else if (!visible && playing) { stop(); autoPaused = true; }
+    else if (visible && autoPaused) play();
+    first = false;
+  }, { threshold: Array.from({ length: 21 }, (_, i) => i / 20) });
+  layout(); words(); request();
+  if (narrow) colsLab.textContent = "rows: least to most regular";
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { layout(); request(); io.observe(cv); });
+</script>
+
+<style is:global>
+  .af-canvas { display: block; width: 100%; height: 26rem; }
+  #alarm-field .opener-hover { line-height: 1.45; }
+</style>
