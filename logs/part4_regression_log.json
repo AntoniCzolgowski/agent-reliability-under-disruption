@@ -1,0 +1,622 @@
+{
+  "people": {
+    "rows": 23476,
+    "train": 16463,
+    "test": 7013
+  },
+  "linear_cv_rmse_pp": {
+    "0.01": {
+      "habit + first 3 days": 10.601,
+      "habit + first 3 days + traits": 10.433,
+      "habit only": 15.611,
+      "the same + days x regularity": 10.435
+    },
+    "1.0": {
+      "habit + first 3 days": 10.601,
+      "habit + first 3 days + traits": 10.433,
+      "habit only": 15.611,
+      "the same + days x regularity": 10.435
+    },
+    "10.0": {
+      "habit + first 3 days": 10.601,
+      "habit + first 3 days + traits": 10.433,
+      "habit only": 15.611,
+      "the same + days x regularity": 10.435
+    },
+    "100.0": {
+      "habit + first 3 days": 10.603,
+      "habit + first 3 days + traits": 10.437,
+      "habit only": 15.611,
+      "the same + days x regularity": 10.44
+    },
+    "1000.0": {
+      "habit + first 3 days": 10.758,
+      "habit + first 3 days + traits": 10.659,
+      "habit only": 15.669,
+      "the same + days x regularity": 10.694
+    }
+  },
+  "linear_final": "habit + first 3 days + traits",
+  "linear_test": {
+    "RMSE (pp)": {
+      "ordinary week, habit alone": 8.9217,
+      "emergency week, habit alone": 15.9526,
+      "emergency week, habit + first 3 days + traits": 10.6443
+    },
+    "MAE (pp)": {
+      "ordinary week, habit alone": 6.2018,
+      "emergency week, habit alone": 11.2256,
+      "emergency week, habit + first 3 days + traits": 7.7475
+    },
+    "R2": {
+      "ordinary week, habit alone": 0.8543,
+      "emergency week, habit alone": 0.5913,
+      "emergency week, habit + first 3 days + traits": 0.818
+    }
+  },
+  "linear_weights_plain_units": {
+    "habit": 0.9017,
+    "fresh_3": 0.6765,
+    "regularity": -0.0179,
+    "commute_km": 0.0004,
+    "rg_km": -0.0,
+    "records_per_day": 0.0017,
+    "kind: far roamers": 0.014,
+    "kind: mid-range movers": 0.0081,
+    "kind: regular commuters": 0.0161,
+    "kind: local regulars": -0.004,
+    "kind: weekend movers": -0.0532,
+    "kind: homebodies": -0.0374
+  },
+  "two_input_model": {
+    "intercept": 0.0296,
+    "habit": 0.9689,
+    "fresh_3": 0.6751
+  },
+  "repair_rmse_pp": {
+    "frozen habit": {
+      "0": 15.953,
+      "1": 15.953,
+      "2": 15.953,
+      "3": 15.953,
+      "5": 15.953,
+      "7": 15.953
+    },
+    "fresh days only": {
+      "0": 15.953,
+      "1": 16.505,
+      "2": 13.485,
+      "3": 11.903,
+      "5": 10.272,
+      "7": 8.878
+    },
+    "mix tuned in ordinary weeks": {
+      "0": 15.783,
+      "1": 14.57,
+      "2": 13.656,
+      "3": 12.759,
+      "5": 11.912,
+      "7": 10.642
+    },
+    "mix fitted in the emergency": {
+      "0": 15.654,
+      "1": 12.783,
+      "2": 11.61,
+      "3": 10.796,
+      "5": 9.754,
+      "7": 8.929
+    },
+    "ordinary week, mix": {
+      "0": 8.796,
+      "1": 8.657,
+      "2": 8.506,
+      "3": 8.385,
+      "5": 8.247,
+      "7": 8.031
+    }
+  },
+  "fresh_weights": [
+    {
+      "arm": "ordinary",
+      "k": 1,
+      "w_fresh": 0.1143,
+      "lo": 0.1021,
+      "hi": 0.1256,
+      "w_habit": 0.9701,
+      "h_lo": 0.9641,
+      "h_hi": 0.976
+    },
+    {
+      "arm": "ordinary",
+      "k": 2,
+      "w_fresh": 0.1964,
+      "lo": 0.1788,
+      "hi": 0.2135,
+      "w_habit": 0.9723,
+      "h_lo": 0.9665,
+      "h_hi": 0.9777
+    },
+    {
+      "arm": "ordinary",
+      "k": 3,
+      "w_fresh": 0.2792,
+      "lo": 0.2599,
+      "hi": 0.2977,
+      "w_habit": 0.9748,
+      "h_lo": 0.9692,
+      "h_hi": 0.9803
+    },
+    {
+      "arm": "ordinary",
+      "k": 5,
+      "w_fresh": 0.3466,
+      "lo": 0.3251,
+      "hi": 0.369,
+      "w_habit": 0.9812,
+      "h_lo": 0.9759,
+      "h_hi": 0.9874
+    },
+    {
+      "arm": "ordinary",
+      "k": 7,
+      "w_fresh": 0.4661,
+      "lo": 0.4428,
+      "hi": 0.4868,
+      "w_habit": 0.981,
+      "h_lo": 0.9758,
+      "h_hi": 0.9865
+    },
+    {
+      "arm": "emergency",
+      "k": 1,
+      "w_fresh": 0.4562,
+      "lo": 0.443,
+      "hi": 0.4687,
+      "w_habit": 0.939,
+      "h_lo": 0.9308,
+      "h_hi": 0.9465
+    },
+    {
+      "arm": "emergency",
+      "k": 2,
+      "w_fresh": 0.5992,
+      "lo": 0.5865,
+      "hi": 0.6124,
+      "w_habit": 0.9602,
+      "h_lo": 0.9523,
+      "h_hi": 0.9671
+    },
+    {
+      "arm": "emergency",
+      "k": 3,
+      "w_fresh": 0.6751,
+      "lo": 0.6617,
+      "hi": 0.6874,
+      "w_habit": 0.9689,
+      "h_lo": 0.9625,
+      "h_hi": 0.9763
+    },
+    {
+      "arm": "emergency",
+      "k": 5,
+      "w_fresh": 0.7581,
+      "lo": 0.7455,
+      "hi": 0.7709,
+      "w_habit": 0.9812,
+      "h_lo": 0.9747,
+      "h_hi": 0.9869
+    },
+    {
+      "arm": "emergency",
+      "k": 7,
+      "w_fresh": 0.8274,
+      "lo": 0.8153,
+      "hi": 0.8384,
+      "w_habit": 0.9919,
+      "h_lo": 0.9859,
+      "h_hi": 0.9982
+    }
+  ],
+  "repair_by_kind": {
+    "err_ord": {
+      "far roamers": 5.386,
+      "mid-range movers": 8.783,
+      "regular commuters": 7.853,
+      "local regulars": 11.252,
+      "weekend movers": 12.051,
+      "homebodies": 10.449
+    },
+    "err_habit": {
+      "far roamers": 10.183,
+      "mid-range movers": 15.104,
+      "regular commuters": 14.91,
+      "local regulars": 20.108,
+      "weekend movers": 20.49,
+      "homebodies": 18.983
+    },
+    "err_3": {
+      "far roamers": 7.351,
+      "mid-range movers": 10.636,
+      "regular commuters": 9.954,
+      "local regulars": 12.912,
+      "weekend movers": 14.589,
+      "homebodies": 12.226
+    },
+    "left_after_3": {
+      "far roamers": 0.41,
+      "mid-range movers": 0.293,
+      "regular commuters": 0.298,
+      "local regulars": 0.187,
+      "weekend movers": 0.301,
+      "homebodies": 0.208
+    }
+  },
+  "repair_by_broke": {
+    "err_ord": {
+      "routine broke": 8.788,
+      "routine held": 8.953
+    },
+    "err_habit": {
+      "routine broke": 23.972,
+      "routine held": 13.418
+    },
+    "err_3": {
+      "routine broke": 13.334,
+      "routine held": 10.116
+    },
+    "left_after_3": {
+      "routine broke": 0.299,
+      "routine held": 0.26
+    }
+  },
+  "logistic_validation": [
+    {
+      "inputs": "the clock",
+      "C": 0.0,
+      "accuracy": 0.5681,
+      "AUC": 0.5903,
+      "log_loss": 0.6859
+    },
+    {
+      "inputs": "the clock",
+      "C": 0.0,
+      "accuracy": 0.5785,
+      "AUC": 0.5961,
+      "log_loss": 0.6781
+    },
+    {
+      "inputs": "the clock",
+      "C": 0.0001,
+      "accuracy": 0.5785,
+      "AUC": 0.5978,
+      "log_loss": 0.6769
+    },
+    {
+      "inputs": "the clock",
+      "C": 0.001,
+      "accuracy": 0.5781,
+      "AUC": 0.598,
+      "log_loss": 0.677
+    },
+    {
+      "inputs": "the clock",
+      "C": 0.01,
+      "accuracy": 0.5781,
+      "AUC": 0.5981,
+      "log_loss": 0.677
+    },
+    {
+      "inputs": "the clock",
+      "C": 0.1,
+      "accuracy": 0.5781,
+      "AUC": 0.5981,
+      "log_loss": 0.677
+    },
+    {
+      "inputs": "the clock",
+      "C": 1.0,
+      "accuracy": 0.578,
+      "AUC": 0.5981,
+      "log_loss": 0.677
+    },
+    {
+      "inputs": "the person",
+      "C": 0.0,
+      "accuracy": 0.5068,
+      "AUC": 0.5265,
+      "log_loss": 0.6927
+    },
+    {
+      "inputs": "the person",
+      "C": 0.0,
+      "accuracy": 0.5162,
+      "AUC": 0.5274,
+      "log_loss": 0.6921
+    },
+    {
+      "inputs": "the person",
+      "C": 0.0001,
+      "accuracy": 0.5181,
+      "AUC": 0.5279,
+      "log_loss": 0.692
+    },
+    {
+      "inputs": "the person",
+      "C": 0.001,
+      "accuracy": 0.5181,
+      "AUC": 0.5279,
+      "log_loss": 0.692
+    },
+    {
+      "inputs": "the person",
+      "C": 0.01,
+      "accuracy": 0.5181,
+      "AUC": 0.5279,
+      "log_loss": 0.692
+    },
+    {
+      "inputs": "the person",
+      "C": 0.1,
+      "accuracy": 0.5181,
+      "AUC": 0.5279,
+      "log_loss": 0.692
+    },
+    {
+      "inputs": "the person",
+      "C": 1.0,
+      "accuracy": 0.5181,
+      "AUC": 0.5279,
+      "log_loss": 0.692
+    },
+    {
+      "inputs": "both",
+      "C": 0.0,
+      "accuracy": 0.5706,
+      "AUC": 0.5959,
+      "log_loss": 0.6855
+    },
+    {
+      "inputs": "both",
+      "C": 0.0,
+      "accuracy": 0.5899,
+      "AUC": 0.6156,
+      "log_loss": 0.6732
+    },
+    {
+      "inputs": "both",
+      "C": 0.0001,
+      "accuracy": 0.5891,
+      "AUC": 0.6203,
+      "log_loss": 0.6691
+    },
+    {
+      "inputs": "both",
+      "C": 0.001,
+      "accuracy": 0.5895,
+      "AUC": 0.6206,
+      "log_loss": 0.6689
+    },
+    {
+      "inputs": "both",
+      "C": 0.01,
+      "accuracy": 0.5894,
+      "AUC": 0.6207,
+      "log_loss": 0.669
+    },
+    {
+      "inputs": "both",
+      "C": 0.1,
+      "accuracy": 0.5894,
+      "AUC": 0.6207,
+      "log_loss": 0.669
+    },
+    {
+      "inputs": "both",
+      "C": 1.0,
+      "accuracy": 0.5894,
+      "AUC": 0.6207,
+      "log_loss": 0.669
+    }
+  ],
+  "logistic_best_C": {
+    "both": 0.001,
+    "the clock": 0.0001,
+    "the person": 0.0001
+  },
+  "logistic_vs_nb_test": {
+    "accuracy": {
+      "Naive Bayes, multinomial (where and when)": 0.5274,
+      "Naive Bayes, Bernoulli (when seen)": 0.5745,
+      "Naive Bayes, where only (from scratch)": 0.5305,
+      "logistic, the clock": 0.5822,
+      "logistic, the person": 0.521,
+      "logistic, both": 0.5903,
+      "Naive Bayes, per person (empirical Bayes)": 0.5398
+    },
+    "AUC": {
+      "Naive Bayes, multinomial (where and when)": 0.5384,
+      "Naive Bayes, Bernoulli (when seen)": 0.5909,
+      "Naive Bayes, where only (from scratch)": 0.5318,
+      "logistic, the clock": 0.6028,
+      "logistic, the person": 0.528,
+      "logistic, both": 0.6214,
+      "Naive Bayes, per person (empirical Bayes)": 0.5591
+    },
+    "log loss": {
+      "Naive Bayes, multinomial (where and when)": 0.7837,
+      "Naive Bayes, Bernoulli (when seen)": 0.8423,
+      "Naive Bayes, where only (from scratch)": 0.7661,
+      "logistic, the clock": 0.6752,
+      "logistic, the person": 0.6919,
+      "logistic, both": 0.6688,
+      "Naive Bayes, per person (empirical Bayes)": NaN
+    }
+  },
+  "logistic_confusion_tn_fp_fn_tp": {
+    "the clock": [
+      48635,
+      50658,
+      34055,
+      69396
+    ],
+    "the person": [
+      27302,
+      71991,
+      25133,
+      78318
+    ],
+    "both": [
+      50691,
+      48602,
+      34465,
+      68986
+    ]
+  },
+  "odds_home_vs_elsewhere_workday": {
+    "00:30": 0.9695,
+    "01:00": 0.9853,
+    "01:30": 0.9234,
+    "02:00": 0.9693,
+    "02:30": 0.9724,
+    "03:00": 1.0089,
+    "03:30": 0.9964,
+    "04:00": 1.0001,
+    "04:30": 1.0149,
+    "05:00": 0.9891,
+    "05:30": 1.0141,
+    "06:00": 0.9888,
+    "06:30": 1.0075,
+    "07:00": 0.934,
+    "07:30": 0.9536,
+    "08:00": 0.9322,
+    "08:30": 0.9179,
+    "09:00": 0.9861,
+    "09:30": 0.963,
+    "10:00": 0.9783,
+    "10:30": 0.992,
+    "11:00": 0.9967,
+    "11:30": 1.0084,
+    "12:00": 1.0041,
+    "12:30": 1.0092,
+    "13:00": 0.9956,
+    "13:30": 0.9765,
+    "14:00": 1.0231,
+    "14:30": 1.0205,
+    "15:00": 0.9625,
+    "15:30": 0.9771,
+    "16:00": 0.9967,
+    "16:30": 0.9668,
+    "17:00": 1.0065,
+    "17:30": 1.0352,
+    "18:00": 1.0274,
+    "18:30": 1.0247,
+    "19:00": 1.0296,
+    "19:30": 1.0696,
+    "20:00": 1.041,
+    "20:30": 1.0332,
+    "21:00": 1.0593,
+    "21:30": 1.0297,
+    "22:00": 1.0022,
+    "22:30": 1.0045,
+    "23:00": 0.9423,
+    "23:30": 0.9822
+  },
+  "odds_place_vs_elsewhere_workday": {
+    "00:30": 1.0206,
+    "01:00": 1.0332,
+    "01:30": 0.9569,
+    "02:00": 1.0592,
+    "02:30": 0.9944,
+    "03:00": 1.1927,
+    "03:30": 1.0112,
+    "04:00": 1.005,
+    "04:30": 1.1011,
+    "05:00": 1.0786,
+    "05:30": 1.0838,
+    "06:00": 0.9597,
+    "06:30": 1.0073,
+    "07:00": 1.0023,
+    "07:30": 1.0058,
+    "08:00": 0.9575,
+    "08:30": 0.9492,
+    "09:00": 0.9515,
+    "09:30": 0.9791,
+    "10:00": 0.9615,
+    "10:30": 0.9787,
+    "11:00": 0.9592,
+    "11:30": 0.9822,
+    "12:00": 0.8979,
+    "12:30": 0.9187,
+    "13:00": 0.9532,
+    "13:30": 0.9213,
+    "14:00": 0.9524,
+    "14:30": 0.9683,
+    "15:00": 0.9626,
+    "15:30": 0.9619,
+    "16:00": 0.9744,
+    "16:30": 0.984,
+    "17:00": 0.9941,
+    "17:30": 0.9513,
+    "18:00": 0.9591,
+    "18:30": 0.9797,
+    "19:00": 0.9448,
+    "19:30": 0.9613,
+    "20:00": 0.9737,
+    "20:30": 1.0033,
+    "21:00": 0.9744,
+    "21:30": 0.9924,
+    "22:00": 0.9226,
+    "22:30": 1.0141,
+    "23:00": 1.0476,
+    "23:30": 1.0739
+  },
+  "odds_per_unit_surprise": {
+    "00:30": 0.9877,
+    "01:00": 1.0031,
+    "01:30": 1.0389,
+    "02:00": 1.0456,
+    "02:30": 1.0307,
+    "03:00": 1.0671,
+    "03:30": 1.0595,
+    "04:00": 1.0521,
+    "04:30": 1.0148,
+    "05:00": 1.0374,
+    "05:30": 1.0061,
+    "06:00": 1.0038,
+    "06:30": 0.9905,
+    "07:00": 1.0044,
+    "07:30": 0.9838,
+    "08:00": 1.0208,
+    "08:30": 0.9894,
+    "09:00": 0.9945,
+    "09:30": 0.9694,
+    "10:00": 1.0053,
+    "10:30": 0.9766,
+    "11:00": 0.9864,
+    "11:30": 0.9855,
+    "12:00": 1.0177,
+    "12:30": 1.0007,
+    "13:00": 0.9955,
+    "13:30": 0.9984,
+    "14:00": 0.9958,
+    "14:30": 1.0001,
+    "15:00": 1.0083,
+    "15:30": 1.0031,
+    "16:00": 1.0066,
+    "16:30": 1.0013,
+    "17:00": 1.0018,
+    "17:30": 0.9967,
+    "18:00": 0.9805,
+    "18:30": 0.983,
+    "19:00": 0.9775,
+    "19:30": 0.9732,
+    "20:00": 0.9974,
+    "20:30": 0.9583,
+    "21:00": 0.9598,
+    "21:30": 0.9866,
+    "22:00": 0.986,
+    "22:30": 0.9835,
+    "23:00": 0.9501,
+    "23:30": 1.0146
+  }
+}
