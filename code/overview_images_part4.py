@@ -32,32 +32,32 @@ def linear(out):
     xx = np.linspace(0, 1, 50); ax.plot(xx, b0 + b1 * xx, color="#0b0b0b", lw=2, label=f"fitted line: {b0:.2f} + {b1:.2f} x habit")
     ax.plot([], [], color=C[1], lw=1.2, label="error (residual)")
     ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="habit: share of a usual fortnight away from home", ylabel="next week: share away from home",
-           title="1. Least squares: the line with the smallest squared errors")
+           title="1. Least squares: the line with\nthe smallest squared errors")
     ax.legend(frameon=False, fontsize=8.5, loc="upper left")
     ax = axes[1]
     x0 = 0.4; ax.plot(xx, b0 + b1 * xx, color="#0b0b0b", lw=2)
     ax.plot([x0, x0 + 0.1], [b0 + b1 * x0] * 2, color=C[2], lw=2); ax.plot([x0 + 0.1] * 2, [b0 + b1 * x0, b0 + b1 * (x0 + 0.1)], color=C[2], lw=2)
     ax.text(x0 + 0.05, b0 + b1 * x0 - 0.05, "+10 points\nof habit", ha="center", va="top", fontsize=9, color=C[2])
     ax.text(x0 + 0.12, b0 + b1 * (x0 + 0.05), f"+{b1 * 10:.1f} points\nnext week", ha="left", va="center", fontsize=9, color=C[2])
-    ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="habit", ylabel="predicted next week", title="2. A weight is a slope: what one more unit buys")
+    ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="habit", ylabel="predicted next week", title="2. A weight is a slope:\nwhat one more unit buys")
     fig.savefig(out / "o11_linear_regression.png"); plt.close(fig)
 
 
 def logistic(out):
     """A straight-line score (the same kind of sum as in linear regression) squeezed by the sigmoid into a probability, then cut at 0.5."""
     z = np.linspace(-6, 6, 200); p = 1 / (1 + np.exp(-z))
-    fig, axes = plt.subplots(1, 3, figsize=(14.5, 3.9), gridspec_kw={"width_ratios": [1, 1.2, 0.9]})
+    fig, axes = plt.subplots(1, 3, figsize=(15.5, 3.9), gridspec_kw={"width_ratios": [1, 1.2, 0.85], "wspace": 0.45})
     ax = axes[0]; terms = [("starting value", -0.3), ("seen elsewhere at 12:00", 0.11), ("at home at 20:00", 0.04), ("at the place at 09:00", -0.05), ("17 seen half hours", 0.62)]
     run = np.cumsum([v for _, v in terms])
     ax.barh(range(len(terms))[::-1], [v for _, v in terms], color=[C[1] if v > 0 else C[0] for _, v in terms], height=0.6)
     ax.set_yticks(range(len(terms))[::-1]); ax.set_yticklabels([t for t, _ in terms], fontsize=8.5); ax.yaxis.grid(False); ax.axvline(0, color=GREY, lw=1)
-    ax.set(xlabel="contribution to the score (log of the odds)", title=f"1. A score: weights times inputs, z = {run[-1]:.2f}")
+    ax.set(xlabel="contribution to the score (log of the odds)", title=f"1. A score: weights x inputs\nz = {run[-1]:.2f}")
     ax = axes[1]
     ax.plot(z, p, color="#0b0b0b", lw=2.2); ax.axhline(0.5, color=GREY, lw=1, ls="--")
     zz = run[-1]; pz = 1 / (1 + np.exp(-zz))
     ax.plot([zz, zz], [0, pz], color=C[1], lw=1.5); ax.plot([-6, zz], [pz, pz], color=C[1], lw=1.5); ax.scatter([zz], [pz], color=C[1], zorder=4)
     ax.text(zz + 0.3, pz - 0.08, f"P = 1 / (1 + e^-z) = {pz:.2f}", fontsize=9, color=C[1])
-    ax.set(xlabel="score z", ylabel="probability of an emergency day", ylim=(0, 1), title="2. The sigmoid turns any score into a probability")
+    ax.set(xlabel="score z", ylabel="probability of an emergency day", ylim=(0, 1), title="2. The sigmoid turns the score\ninto a probability")
     ax = axes[2]; ax.axis("off"); ax.grid(False)
     ax.text(0.02, 0.85, "3. A class", fontsize=12, fontweight="bold", transform=ax.transAxes)
     ax.text(0.02, 0.62, f"P = {pz:.2f} is above 0.5\n-> predicted: emergency day", fontsize=10, transform=ax.transAxes)
@@ -75,16 +75,16 @@ def arrow(ax, a, b, c=GREY):
 
 
 def bagging_boosting(out):
-    fig, axes = plt.subplots(1, 2, figsize=(14, 4.4))
+    fig, axes = plt.subplots(1, 2, figsize=(15, 4.6), gridspec_kw={"wspace": 0.12})
     for ax in axes: ax.set_xlim(0, 10); ax.set_ylim(0, 6); ax.axis("off"); ax.grid(False)
-    ax = axes[0]; ax.set_title("Bagging: many trees side by side, each on a resample, equal votes", fontsize=11.5)
+    ax = axes[0]; ax.set_title("Bagging: deep trees side by side, each on a resample\n(people drawn with replacement), equal votes", fontsize=11.5)
     box(ax, 3.5, 5.0, 3, 0.7, "training people", "#e8f0fb")
     for j, x in enumerate([0.4, 2.8, 5.2, 7.6]):
-        box(ax, x, 3.3, 2, 0.8, f"resample {j + 1}\n(drawn with replacement)", "#f3f2ee", fs=8)
+        box(ax, x, 3.3, 2, 0.8, f"resample {j + 1}", "#f3f2ee", fs=9)
         box(ax, x, 1.8, 2, 0.8, f"deep tree {j + 1}", "#ffffff", ec=C[0])
         arrow(ax, (5, 5.0), (x + 1, 4.1)); arrow(ax, (x + 1, 3.3), (x + 1, 2.6)); arrow(ax, (x + 1, 1.8), (5, 0.95))
     box(ax, 3.5, 0.25, 3, 0.7, "average of equal votes", "#e8f0fb")
-    ax = axes[1]; ax.set_title("Boosting: small trees one after another, each fixing the last", fontsize=11.5)
+    ax = axes[1]; ax.set_title("Boosting: stumps one after another, each trained\nwhere the earlier ones went wrong, weighted votes", fontsize=11.5)
     for j, x in enumerate([0.2, 2.7, 5.2, 7.7]):
         box(ax, x, 3.9, 2.1, 1.0, f"people, reweighted\n{'all equal' if j == 0 else 'misses weigh more'}", "#f3f2ee", fs=8)
         box(ax, x, 2.2, 2.1, 0.9, f"stump {j + 1}\nvote alpha {[0.35, 0.22, 0.17, 0.12][j]:.2f}", "#ffffff", ec=C[1], fs=8.5)
@@ -110,16 +110,16 @@ def adaboost_rounds(out):
         e, f, t, s, pred = best; a = 0.5 * np.log((1 - e) / e)
         rounds.append((w.copy(), f, t, s, e, a)); F += a * pred
         w = w * np.exp(-a * yv * pred); w /= w.sum()
-    fig, axes = plt.subplots(1, 4, figsize=(16, 4.1), sharey=True)
+    fig, axes = plt.subplots(1, 4, figsize=(16, 4.3), sharey=True, gridspec_kw={"wspace": 0.12})
     for r_, (ax, (wr, f, t, s, e, a)) in enumerate(zip(axes[:3], rounds), 1):
         ax.scatter(x1, x2, s=2400 * wr, c=[C[1] if v > 0 else C[0] for v in yv], edgecolor="#0b0b0b", lw=0.4, alpha=0.85)
         (ax.axvline if f == 0 else ax.axhline)(t, color="#0b0b0b", lw=1.6, ls="--")
-        ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="feature 1", title=f"Round {r_}: weighted error {e:.2f}, alpha {a:.2f}")
+        ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="feature 1", title=f"Round {r_}\nweighted error {e:.2f}, alpha {a:.2f}")
     axes[0].set_ylabel("feature 2")
     ax = axes[3]; pred = np.sign(F)
     ax.scatter(x1, x2, s=120, c=[C[1] if v > 0 else C[0] for v in yv], edgecolor=["#0b0b0b" if p_ == v else C[7] for p_, v in zip(pred, yv)], lw=[0.4 if p_ == v else 2.2 for p_, v in zip(pred, yv)])
-    ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="feature 1", title=f"Weighted vote: {np.mean(pred == yv):.0%} right")
-    fig.suptitle("AdaBoost on twelve toy people: dot size is the row weight going into the round; orange broke, blue held", x=0.01, ha="left", fontweight="bold", fontsize=12.5, y=1.04)
+    ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="feature 1", title=f"The weighted vote\n{np.mean(pred == yv):.0%} of the twelve right")
+    fig.suptitle("AdaBoost on twelve toy people: dot size is the row weight going into the round; orange broke, blue held", x=0.01, ha="left", fontweight="bold", fontsize=12.5, y=1.08)
     fig.savefig(out / "o14_adaboost_rounds.png"); plt.close(fig)
 
 

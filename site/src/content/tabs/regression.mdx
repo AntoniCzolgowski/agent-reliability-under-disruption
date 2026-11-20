@@ -1,0 +1,215 @@
+---
+title: "Regression"
+description: "How much should a simulated person believe the first days of an emergency? Linear regression measures it, and logistic regression returns to telling an emergency day from an ordinary one."
+---
+
+import Figure from "../../components/Figure.astro";
+import o11 from "../../assets/figures/o11_linear_regression.png";
+import o12 from "../../assets/figures/o12_logistic_sigmoid.png";
+import t19 from "../../assets/figures/t19_regression_people.png";
+import t20 from "../../assets/figures/t20_regression_split.png";
+import t11 from "../../assets/figures/t11_days_as_words.png";
+import t13 from "../../assets/figures/t13_nb_split.png";
+import f53 from "../../assets/figures/f53_predicted_vs_actual.png";
+import f54 from "../../assets/figures/f54_repair_curve.png";
+import f55 from "../../assets/figures/f55_repair_by_kind.png";
+import f56 from "../../assets/figures/f56_logistic_tuning_and_nb.png";
+import f57 from "../../assets/figures/f57_logistic_confusion.png";
+import f58 from "../../assets/figures/f58_odds_clock.png";
+
+<p class="lede">When an emergency starts, a simulated person built from ordinary weeks faces a choice on every new day: is this day noise, or is it news? In ordinary weeks an unusual day is mostly noise, and an agent that believed it would get worse. Linear regression measures how much a new day should count, and the answer changes with the situation: one new day deserves four times more weight in the emergency than in ordinary weeks. Weighted that way, a week of fresh days brings the agent back to the accuracy it had before the emergency began. Logistic regression then returns to the question of the NaiveBayes tab, whether a single day comes from the emergency, and answers it better than any Naive Bayes model did.</p>
+
+## Overview
+
+**Linear regression** predicts a number. It assumes the number is a weighted sum of the inputs plus a constant: prediction = b₀ + b₁ × input₁ + b₂ × input₂ + … The weights are found by **least squares**: among all possible lines (or planes, with more inputs), it takes the one with the smallest sum of squared errors between the predictions and the real values on the training examples (Figure 1, left). Each weight has a plain meaning. It is the change in the prediction when its input grows by one unit and the other inputs stay the same, the slope of the line (Figure 1, right). Linear regression is used wherever a number has to be predicted and the reasons have to be read: a price from the size of a flat, demand for electricity from the temperature, or here, how a person spends next week from how they spent the weeks before.
+
+<Figure n={1} title="Linear regression: a line, its errors and a slope" src={o11} alt="Two panels with toy data. Left: twelve blue points, the share of a usual fortnight away from home on the horizontal axis and the share of the next week on the vertical axis, with a black fitted line 0.01 plus 0.96 times the habit and short orange vertical segments from each point to the line marking the errors. Right: the same line with a green step: 10 more points of habit give 9.6 more points predicted for the next week.">
+Left: least squares picks the line that makes the squared vertical errors, the orange segments, as small as possible. Right: a weight is the slope of the line, here 9.6 more points of predicted share for every 10 more points of habit.
+</Figure>
+
+**Logistic regression** predicts a class, here whether a day comes from the emergency or from ordinary weeks. It starts with the same kind of weighted sum, called a score, but a score can be any number, while a probability has to lie between 0 and 1. The **sigmoid** function, P = 1 / (1 + e^−score), squeezes any score into that range: a score of 0 gives 0.5, large positive scores approach 1 and large negative scores approach 0 (Figure 2). The probability becomes a class by a cut, usually at 0.5. The weights are found by maximising the likelihood of the training labels, not by least squares. Each weight now has a meaning in **odds**, the probability of the class divided by the probability of the other class: raising an input by one unit multiplies the odds by e^weight. A weight of 0.11 multiplies the odds by 1.12, so they become 12% higher.
+
+<Figure n={2} title="Logistic regression: from a score to a probability to a class" src={o12} alt="Three panels. Left: horizontal bars for the contributions of five toy inputs to a score, a starting value of minus 0.3, seen elsewhere at 12:00 plus 0.11, at home at 20:00 plus 0.04, at the place at 09:00 minus 0.05 and 17 seen half hours plus 0.62, adding up to a score of 0.42. Middle: the S-shaped sigmoid curve from 0 to 1, with the score 0.42 mapped to a probability of 0.60 and a dashed line at 0.5. Right: text saying that 0.60 is above 0.5, so the day is predicted as an emergency day, and that a weight of 0.11 multiplies the odds by 1.12.">
+A score adds up weighted inputs (left), the sigmoid turns it into a probability (middle), and a cut at 0.5 turns the probability into a class (right). The numbers are made up to show the steps.
+</Figure>
+
+The two differ in what they predict and in what their weights mean. Linear regression predicts a number on its own scale and its weights are slopes in that scale. Logistic regression predicts a probability of a class and its weights are changes in the log of the odds. Both are linear in their inputs, which is why both are easy to read and why neither can bend around a pattern on its own.
+
+**Logistic regression and Naive Bayes are a known pair.** Naive Bayes learns how each class produces the data and assumes that every half hour of a day is independent of the others once the class is known. Logistic regression learns the boundary between the classes directly and makes no such assumption, so when two half hours carry the same information, it does not count it twice. With enough data, logistic regression is expected to do at least as well. This tab tests that on the same days and people as the NaiveBayes tab.
+
+In this project, a simulated person, an **agent**, is built from a person's ordinary weeks and stands in for them in a simulation of the city. The NaiveBayes and DecTrees tabs found that the emergency broke about one routine in five, and that the warning in ordinary weeks was faint. This tab asks what an agent should do once the emergency has started and the first new days come in. **That is a question only regression can answer, because the answer is a weight: how much of a new day to believe, and how much of the old habit to keep.**
+
+## Data
+
+### Linear regression: one row per person
+
+The number to predict is the **share of the day spent away from home**: of the half hours in which a person is seen, the share in which they are not in their home block (the 3 × 3 squares around where they spend their nights, as on the NaiveBayes tab). It is measured over the **second week of the emergency, days 67 to 74**. The inputs are what an agent could know on that week's eve:
+
+- **The habit**: the same share over the 45 days before the emergency (days 15 to 59), kept separately for workdays and rest days and mixed in the proportion of workdays and rest days of the week to predict.
+- **The first days**: how far the share of the first k emergency days, starting on day 60, sat from what the habit expected on those days, for k = 1, 2, 3, 5 and 7. A first day spent more away from home than usual gives a positive number.
+- **Traits** from the DecTrees tab, all from days 0 to 44: regularity, the commute in km, how far a person ranges, records per day, and the kind of mover as six 0/1 columns.
+
+The same table is built a second time for **ordinary weeks**, as a placebo with exactly the same shape: the habit from days 0 to 44, the first days from day 45 and the week to predict 52 to 59. Comparing the two arms shows what is special about the emergency, because anything that also happens between two ordinary weeks is not.
+
+A day counts if a person is seen in at least 4 of its half hours (00:00 left out, as before). 23,476 of the 23,904 labelled people of Part 3 have a readable habit and at least 3 readable days in both weeks to predict. Table 1 shows six of them.
+
+<Figure label="Table" n={1} title="People as rows for the linear regression" src={t19} alt="Table image with six training people and the columns uid, kind, habit days 15-59, first day vs habit, first 3 days vs habit, regularity and target days 67-74. For example far roamer 4952 with a habit of 0.765 away from home, a first emergency day that matched the habit, regularity 0.300 and 0.701 of the second emergency week away from home, and local regular 8763 with a habit of 0.505, a first day 0.105 above the habit, the first three days 0.187 below it and 0.246 of the second week away.">
+Six training people with the habit, the first emergency days measured against the habit, one trait and the share of the second emergency week away from home, which is the number to predict.
+</Figure>
+
+The training and test sets are split by person, as on every tab: the 16,463 development people train the model and choose its settings, and the 7,013 evaluation people are the test set (Table 2). They share nobody. A disjoint test set matters here for the same reason as before: a person's own weeks are similar, so a model scored on people it was trained on would look better than it is on anyone new.
+
+<Figure label="Table" n={2} title="Training and test sets for the linear regression" src={t20} alt="Table image with two rows. Training: 16,463 development people, habit mean 0.680, days 67-74 mean 0.690, used for fitting the weights and choosing the features with 5-fold cross-validation. Test: 7,013 evaluation people, habit mean 0.676, days 67-74 mean 0.689, used for scoring the fixed model once.">
+How many people are in each set and the average share of the day away from home in their habit and in the week to predict. The sets are split by person and share nobody.
+</Figure>
+
+### Logistic regression: one row per person-day
+
+Logistic regression needs a two-class label, and it uses the label of the NaiveBayes tab: is a person-day from the ordinary fortnight (days 45 to 59, class 0) or from the emergency (days 60 to 74, class 1)? The days are the same 677,295 readable person-days, written as 47 half hours, each unseen, at home, at the daytime place or elsewhere (Table 3). The people are split exactly as before: 379,586 days of 13,732 people for training, 94,965 days of 3,432 other development people for validation, and 202,744 days of 7,350 evaluation people for the test (Table 4). Two sets of inputs are compared:
+
+- **The clock**: the same 282 inputs as the multinomial Naive Bayes model, one 0/1 column for each combination of day type, half hour and place, such as "workday, 12:00, elsewhere".
+- **The person**: 47 numbers, one per half hour, saying how unusual the person's state in that half hour was for them, measured as the surprise of their own habit model from days 0 to 44 (0 when the half hour is not seen).
+
+<Figure label="Table" n={3} title="Labelled person-days, one letter per half hour" src={t11} alt="Table image with six person-days and the columns uid, day, day type, label and a string of 47 letters from 00:30 to 23:30, H for home, P for the daytime place, E for elsewhere and a dot for not seen. Three days are ordinary and three are from the emergency.">
+The same labelled days as on the NaiveBayes tab: H home, P daytime place, E elsewhere, a dot not seen. The clock inputs turn each letter into a 0/1 column for its half hour.
+</Figure>
+
+<Figure label="Table" n={4} title="Training, validation and test days" src={t13} alt="Table image with three rows. Training: 13,732 people, 379,586 person-days, emergency share 0.509, development people 80 percent. Validation: 3,432 people, 94,965 person-days, 0.509, development people 20 percent. Test: 7,350 people, 202,744 person-days, 0.510, evaluation people.">
+The split of the NaiveBayes tab, reused so that both models are compared on exactly the same test days. Nobody is in two sets.
+</Figure>
+
+Links: a sample of 500 people of the linear regression table is [`data/samples/regression_week_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/data/samples/regression_week_sample.csv), and a sample of 500 labelled person-days is [`data/samples/nb_days_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/data/samples/nb_days_sample.csv). Both are built from the cleaned record table in the release [Processed tables, Part 1](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/releases/tag/data-v1).
+
+## Code
+
+Python 3.11 with pandas, NumPy, scikit-learn 1.9 (LinearRegression, Ridge, LogisticRegression, KFold) and Matplotlib, run on the Alpine cluster at the University of Colorado Boulder.
+
+- [`notebooks/08_how_far_a_routine_bends.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/notebooks/08_how_far_a_routine_bends.ipynb): both tables, the cross-validated choice of inputs, the linear model and the repair curve, the logistic models and their comparison with Naive Bayes, with Figures 3 to 8 and Tables 1 and 2.
+- [`code/breaks.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/code/breaks.py) rebuilds the half hours and the habit models of Part 3, and [`code/overview_images_part4.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/code/overview_images_part4.py) draws Figures 1 and 2.
+
+## Results
+
+### Before the regression: the emergency reshuffled people
+
+On average, the emergency hardly moved the share of the day people spent away from home. The habit says 67.9% and the second emergency week shows 69.0%, a change of 1.1 points, against 1.4 points between two ordinary weeks. **The emergency did not shift everyone the same way. It moved people in different directions.** Regular commuters spent 1.6 points less of the week away from home than their habit, while homebodies spent 4.0 points more and local regulars 4.4 points more. An agent that knows only the average change would learn nothing, because there is almost no average change to learn.
+
+### The linear model
+
+Four sets of inputs were compared by 5-fold cross-validation on the training people, with a light Ridge penalty (a small cost on large weights) tried at five strengths. The error is the root mean squared error, **RMSE**, in percentage points of the share away from home: roughly, how far a typical prediction misses.
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Inputs</th><th>Cross-validated RMSE (points)</th></tr></thead>
+<tbody>
+<tr><td>Habit only</td><td>15.61</td></tr>
+<tr><td>Habit and the first 3 emergency days</td><td>10.60</td></tr>
+<tr><td>Habit, first 3 days and traits</td><td>10.43</td></tr>
+<tr><td>The same, plus first days × regularity</td><td>10.44</td></tr>
+</tbody>
+</table>
+</div>
+
+The first three days take a third of the error away. The traits help a little more, and letting the weight of the new days depend on regularity adds nothing. The penalty made no difference up to a strength of 100, so the chosen model is the third one, essentially plain least squares. It was then fitted on all training people and scored once on the test people:
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Test people</th><th>RMSE (points)</th><th>MAE (points)</th><th>R²</th></tr></thead>
+<tbody>
+<tr><td>Ordinary week, habit alone</td><td>8.92</td><td>6.20</td><td>0.854</td></tr>
+<tr><td>Emergency week, habit alone</td><td>15.95</td><td>11.23</td><td>0.591</td></tr>
+<tr><td>Emergency week, habit, first 3 days and traits</td><td>10.64</td><td>7.75</td><td>0.818</td></tr>
+</tbody>
+</table>
+</div>
+
+**R²** is the share of the differences between people that the model explains, and **MAE** is the mean absolute error. In ordinary weeks, a person's habit alone explains 85% of how much of the next week they spend away from home. In the emergency the same habit explains 59%, and its error almost doubles. That drop is this project's question, when an agent stops being a reliable description of its person, measured as one number. With the first three emergency days the model explains 82% and the error falls to 10.6 points. Figure 3 shows the predictions against what people really did.
+
+<Figure n={3} title="Predicted against actual, test people, second emergency week" src={f53} alt="Two hexagonal density plots of 7,013 test people with the predicted share of the week away from home on the horizontal axis and the actual share of days 67 to 74 on the vertical axis, both from 0 to 100 percent, and an orange dashed diagonal. Left, the habit alone: RMSE 16.0 points, R squared 0.59, with a wide cloud around the diagonal and many people far below or above it. Right, the habit and the first three emergency days: RMSE 10.6 points, R squared 0.82, with the cloud much tighter around the diagonal.">
+Each hexagon counts test people with that prediction and that real share; on the dashed diagonal the prediction is exact. Three fresh days pull the cloud tight around the diagonal.
+</Figure>
+
+Two weights in plain words, from the chosen model:
+
+- **Habit, 0.90.** A person who usually spends 10 more points of their days away from home is predicted to spend 9.0 more points of the second emergency week away, other inputs being equal. The old routine still carries most of the level.
+- **The first three days, 0.68.** If someone's first three emergency days sit 10 points further from home than their habit expected, the model predicts 6.8 more points away in the second week. About two thirds of an early change lasts.
+
+Two traits also matter a little: weekend movers spend 5.3 points less of the week away than their habit and first days suggest, and homebodies 3.7 points less.
+
+### Noise or news: how much a new day should count
+
+To see what an agent should do day by day, the model was refitted with only two inputs, the habit and the first k days, for each k and in both arms, with 95% intervals from 500 bootstrap samples of training people (Figure 4, right). In ordinary weeks, the first new day gets a weight of 0.11 (0.10 to 0.13). In the emergency it gets 0.46 (0.44 to 0.47). **In ordinary weeks an unusual day is mostly noise. In the emergency it is news, and four times as much of it is worth believing.**
+
+The same weights can be read as a mix of the old and the new. After one new day, the best prediction in ordinary weeks is 0.86 × habit + 0.11 × the new day. In the emergency it is 0.48 × habit + 0.46 × the new day, an equal mix. After seven days in the emergency it is 0.17 × habit + 0.83 × the new days: the old routine has almost stopped counting.
+
+<Figure n={4} title="The repair curve, and how much a new day counts" src={f54} alt="Two panels. Left: test error in RMSE points against the number of fresh emergency days the agent has seen, 0 to 7. The frozen habit stays flat at 16.0. Fresh days only starts at 16.5 after one day, worse than the habit, and falls to 8.9 after seven. The mix tuned in ordinary weeks falls slowly from 14.6 to 10.6. The mix fitted in the emergency falls from 12.8 after one day to 10.8 after three and 8.9 after seven, reaching the grey band of the ordinary-week error around 8.8. Right: the weight on the new days against the number of fresh days, with shaded 95 percent intervals: ordinary weeks from 0.11 to 0.47, emergency from 0.46 to 0.83.">
+Left: the error on test people after each number of fresh emergency days, for four ways an agent can use them, with the error in an ordinary week as a grey band. Right: the weight a new day deserves, in ordinary weeks and in the emergency, with 95% intervals.
+</Figure>
+
+The left of Figure 4 is a **repair curve**. It compares four agents on the test people, after 0 to 7 fresh emergency days:
+
+- The **frozen habit** never looks at the new days. Its error stays at 16.0 points for the whole emergency.
+- **Fresh days only** forgets the habit and believes the new days alone. After one day it is worse than the habit (16.5 points), because one day is a noisy sample of a week. It catches up as days accumulate (8.9 points after seven).
+- **The mix tuned in ordinary weeks** carries over the weights of normal times. It improves slowly, to 12.8 points after three days and 10.6 after seven, because it keeps treating news as noise.
+- **The mix fitted in the emergency** uses the weights the emergency calls for. It is at 12.8 points after one day, 10.8 after three and 8.9 after seven, which is back at the 8.8 points of an ordinary week.
+
+So a week of the new situation, weighed correctly, gives an agent back its ordinary accuracy. Weighed with the habits of normal times, the same week gets it only halfway.
+
+### Whose agents need the most repair
+
+Figure 5 splits the errors by kind of mover. The emergency roughly doubled the error for every kind, and three fresh days closed between 59% and 81% of the gap to the ordinary week. Far roamers keep the smallest errors throughout. Weekend movers, local regulars and homebodies start with the largest errors even in ordinary weeks and remain the hardest to describe. For the people whose routine broke, by the label of the DecTrees tab, the habit's error nearly triples, from 8.8 to 24.0 points, and three days bring it down to 13.3. For people whose routine held, the emergency still adds 4.5 points of error, so it touched more lives than the label counts.
+
+<Figure n={5} title="Whose agent the first days repair" src={f55} alt="Grouped bar charts of RMSE in points on test people. For each kind of mover and for people whose routine broke or held, three bars: the habit in an ordinary week, the habit in the emergency week and the emergency mix after three fresh days. Far roamers 5.4, 10.2 and 7.4. Mid-range movers 8.8, 15.1 and 10.6. Regular commuters 7.9, 14.9 and 10.0. Local regulars 11.3, 20.1 and 12.9. Weekend movers 12.1, 20.5 and 14.6. Homebodies 10.5, 19.0 and 12.2. Routine broke 8.8, 24.0 and 13.3. Routine held 9.0, 13.4 and 10.1.">
+The error of the habit in an ordinary week (light grey), in the emergency week (dark grey) and after three fresh days with the emergency weights (orange), by kind of mover and by whether the routine broke. Every kind's error about doubles, and three days repair most of it.
+</Figure>
+
+### Logistic regression against Naive Bayes
+
+The strength of the penalty on large weights, C (smaller C means a stronger penalty), was chosen on the validation people by log loss, the same way the smoothing of Naive Bayes was chosen (Figure 6, left and middle). With 380,000 training days the choice barely matters: every C from 0.0001 upward gives nearly the same validation score, and only the strongest penalties make it worse. The final models were fitted on all development people and scored once on the test days.
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Model, test days</th><th>Accuracy</th><th>AUC</th><th>Log loss</th></tr></thead>
+<tbody>
+<tr><td>Naive Bayes, multinomial (where and when)</td><td>52.7%</td><td>0.538</td><td>0.784</td></tr>
+<tr><td>Naive Bayes, Bernoulli (when seen)</td><td>57.5%</td><td>0.591</td><td>0.842</td></tr>
+<tr><td>Naive Bayes, one detector per person</td><td>54.0%</td><td>0.559</td><td></td></tr>
+<tr><td>Logistic regression, the clock</td><td>58.2%</td><td>0.603</td><td>0.675</td></tr>
+<tr><td>Logistic regression, the person</td><td>52.1%</td><td>0.528</td><td>0.692</td></tr>
+<tr><td>Logistic regression, both</td><td>59.0%</td><td>0.621</td><td>0.669</td></tr>
+</tbody>
+</table>
+</div>
+
+On exactly the same 282 inputs, **logistic regression beats multinomial Naive Bayes clearly**: accuracy 58.2% against 52.7%, AUC 0.603 against 0.538. It also beats the best Naive Bayes model, the Bernoulli one. And unlike every Naive Bayes model, its log loss is below that of a coin flip (0.693): its probabilities are modest and honest, where the Naive Bayes probabilities were overconfident. The reason is the independence assumption. Neighbouring half hours of a day repeat each other, so Naive Bayes counts the same evidence many times and pushes its probabilities too far, while logistic regression learns how much each half hour adds beyond the others.
+
+How unusual each half hour was for the person carries little on its own (AUC 0.528), but added to the clock it lifts AUC to 0.621, the best day-level score in the project so far. Majority guessing would score 51.0%.
+
+<Figure n={6} title="Choosing the penalty, and logistic regression against Naive Bayes" src={f56} alt="Three panels. Left: validation log loss against C on a log scale for the clock, the person and both, flat from 0.0001 upward at about 0.677, 0.692 and 0.669, with a dashed line for a coin flip at 0.693. Middle: validation accuracy against C, flat at about 57.8, 51.8 and 58.9 percent. Right: horizontal bars of test AUC: Naive Bayes where only 0.532, logistic the person 0.528, Naive Bayes multinomial 0.538, Naive Bayes per person 0.559, Naive Bayes Bernoulli 0.591, logistic the clock 0.603, logistic both 0.621.">
+Left and middle: validation log loss and accuracy for each strength of the penalty; the curves are flat over a wide range. Right: test AUC of every logistic and Naive Bayes model on the same days, logistic regression in orange.
+</Figure>
+
+<Figure n={7} title="Confusion matrices of the three logistic models" src={f57} alt="Three confusion matrices of the 202,744 test days with the actual class in rows and the predicted class in columns. The clock: accuracy 58.2 percent, AUC 0.603; of ordinary days 48,635 predicted ordinary and 50,658 emergency; of emergency days 34,055 predicted ordinary and 69,396 emergency. The person: accuracy 52.1 percent; 27,302, 71,991, 25,133 and 78,318. Both: accuracy 59.0 percent, AUC 0.621; 50,691, 48,602, 34,465 and 68,986.">
+The three logistic models on the test days, with the count and the row share in each cell. The clock and both find about two thirds of the emergency days while leaving about half of the ordinary days alone.
+</Figure>
+
+### What the weights say
+
+Each weight of the clock model is an odds ratio for one half hour and one place. Figure 8 (left) compares being at home, or at the daytime place, with being elsewhere, half hour by half hour on workdays. One weight in plain words: **on a workday, being seen at one's daytime place at 12:00 rather than elsewhere multiplies the odds that the day is an emergency day by 0.90.** Put the other way round, being somewhere else at noon raises the odds by 11%. Being at home in the evening, from 19:00 to 21:30, raises them by 3% to 7% per half hour, while being at home in the morning rush, 07:00 to 08:30, lowers them by about 7%.
+
+No single half hour comes close to giving the emergency away. Between 06:00 and 22:00 every odds ratio lies between 0.90 and 1.07, and the model is right on 58% of days only by adding dozens of such nudges together. The larger values at night, up to 1.19 for the daytime place at 03:00, rest on the few people seen at their daytime place at that hour. This matches the NaiveBayes tab: on any one day, the emergency is quiet. The person model (Figure 8, right) says when being unusual for oneself matters. Being unusual in the small hours, 02:00 to 05:00, points to an emergency day, while being unusual late in the evening points slightly to an ordinary one.
+
+<Figure n={8} title="The odds clock" src={f58} alt="Two panels. Left: odds ratio of an emergency day on a log scale against the hour of a workday, for being at home rather than elsewhere in orange and being at the daytime place rather than elsewhere in green, with a line at 1. The orange line lies below 1 around 07:00 to 08:30 at about 0.92 and above 1 in the evening, reaching 1.07 at 19:30. The green line lies mostly below 1 during the day, lowest at 12:00 at 0.90, and jumps to 1.19 at 03:00, when few people are at their daytime place. Right: bars of the odds ratio per unit of surprise for each half hour, between about 0.95 and 1.07, above 1 at night from 02:00 to 05:00 and below 1 late in the evening.">
+Left: how being at home or at the daytime place, rather than elsewhere, changes the odds of an emergency day at each half hour of a workday. Right: how much one unit of being unusual for oneself changes the odds at each half hour. Every effect is small.
+</Figure>
+
+## Conclusions
+
+The emergency did not move the average person: people spent almost the same share of their days away from home as before. It moved people in different directions, and that is what made their simulated stand-ins fail. A person's ordinary weeks explain 85% of how they spend the next ordinary week, but only 59% of how they spend a week of the emergency.
+
+The main finding is about how an agent should learn once something has changed. In ordinary weeks a strange day is mostly noise: the best weight for one new day is 0.11, and an agent that believed new days fully would get worse. In the emergency, a strange day is news: the best weight is 0.46, four times larger, and after a week the old habit is worth only 0.17. An agent weighted for the emergency gets back to its ordinary accuracy after about seven days. One that keeps the weights of normal times gets only halfway in the same week. **The right amount of trust in new evidence is not a fixed setting. It depends on the situation, so an agent first has to recognise that the situation has changed.**
+
+That is where logistic regression comes in. Read half hour by half hour, the clock of a single day tells an emergency day from an ordinary one better than any Naive Bayes model (AUC 0.603 against at most 0.591), and adding how unusual each half hour was for the person raises it to 0.621. Still, a single day is a faint signal, made of many nudges of a few percent each. Recognising the emergency takes several days or many people at once, not one person's one day.
+
+For anyone building simulations of a city, this adds two working rules to those of the earlier tabs. First, do not freeze an agent's trust in new data at the level that worked in normal times. Keep two settings, one for ordinary weeks and one for a disruption, and switch between them when a detector, or the many agents at once, signal a change. Second, plan for about a week of fresh observations before stand-ins can be trusted again after a shock, and spend them first on the people whose errors grew most. Here those were the people whose routine broke, whose error nearly tripled.
+
+These results are also the first measured payoff for the update agent of the [Research](../research/) tab: an update after the first emergency days is worth far more than an update in ordinary weeks. Learning when to update starts from that difference.

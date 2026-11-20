@@ -1,0 +1,164 @@
+---
+title: "AdaBoost"
+description: "Who breaks, asked again by a committee of 1,500 single questions: how it beats the Part 3 tree, which questions carry its vote, whom it could never learn, and what one day of the emergency adds."
+---
+
+import Figure from "../../components/Figure.astro";
+import o13 from "../../assets/figures/o13_bagging_vs_boosting.png";
+import o14 from "../../assets/figures/o14_adaboost_rounds.png";
+import t14 from "../../assets/figures/t14_tree_people.png";
+import t21 from "../../assets/figures/t21_onehot.png";
+import t22 from "../../assets/figures/t22_adaboost_split.png";
+import t23 from "../../assets/figures/t23_first_stumps.png";
+import f59 from "../../assets/figures/f59_adaboost_rounds.png";
+import f60 from "../../assets/figures/f60_adaboost_confusion.png";
+import f61 from "../../assets/figures/f61_stumps_and_votes.png";
+import f62 from "../../assets/figures/f62_who_it_cannot_learn.png";
+import f63 from "../../assets/figures/f63_one_day_in.png";
+
+<p class="lede">The DecTrees tab asked whether ordinary weeks warned whose routine an emergency would break, and found a faint answer in a few readable questions. AdaBoost asks the same question with a committee of 1,500 single questions, each one trained where the earlier ones went wrong. The committee ranks people better than the best tree. Following which people it keeps getting wrong shows something the tree could not: after 1,500 rounds the people it could never learn are almost all the irregular people whose routine broke, the same people a disruption alarm misses on the Research tab. Given one day of the emergency, the committee finds seven times as many of their broken routines.</p>
+
+## Overview
+
+**Boosting** builds a strong model out of many weak ones, trained one after another. Each new model concentrates on the examples that the models before it got wrong, and at the end all of them vote, with a weight that depends on how good each one was. **Bagging**, the idea behind random forests, also combines many models, but builds them side by side and independently, each on a resampled copy of the data, and gives every one the same vote (Figure 1). Bagging mainly calms the jitter of deep trees, the variance seen on the DecTrees tab where 200 resamples gave 139 different trees. Boosting mainly removes the bias of models too simple to fit the data, by adding them up one correction at a time.
+
+<Figure n={1} title="Bagging against boosting" src={o13} alt="Two diagrams. Left, bagging: training people at the top feed four resamples, each resample feeds a deep tree, and the four trees feed an average of equal votes at the bottom. Right, boosting: four boxes of people, the first with all weights equal and the others with misses weighing more, each feeding a stump with a vote alpha of 0.35, 0.22, 0.17 and 0.12; each stump points to the next reweighted box, and all four feed a weighted vote, the sum of alpha times vote.">
+Bagging grows deep trees in parallel on resamples and averages them with equal votes. Boosting grows stumps in a sequence, each on reweighted people, and adds their votes with weights alpha.
+</Figure>
+
+**AdaBoost** (adaptive boosting, Freund and Schapire, 1997) is the classic boosting method. Its weak models are usually **decision stumps**: trees with one question and two leaves, such as "is regularity above 0.725?". A stump alone is barely better than guessing. AdaBoost works in rounds:
+
+1. Every training person starts with a **row weight**. Here the weights start balanced, so that the people who broke, one in five, weigh as much in total as the people who held, the same idea as the class weights of the trees.
+2. In each round a stump is fitted to the weighted people. Its **weighted error** e is the share of weight it gets wrong.
+3. The stump's vote gets the weight **alpha = learning rate × ln((1 − e) / e)**. A stump with an error near 0.5 gets almost no say. One with a low error gets a loud vote.
+4. The people the stump got wrong have their weight multiplied by e^alpha, and all weights are rescaled to add up to one. The next stump therefore sees the misses as heavier and tries harder to get them right.
+5. To predict, every stump votes +1 (broke) or −1 (held), the votes are multiplied by their alphas and added up, and the sign of the sum is the answer. The sum itself ranks people from least to most likely to have broken.
+
+Figure 2 runs three rounds on twelve made-up people. The two people the first stump gets wrong grow larger in the second round, the second stump is placed to catch one of them, and the weighted vote of the three stumps gets eleven of the twelve right, which no single stump does.
+
+<Figure n={2} title="Three rounds of AdaBoost on twelve toy people" src={o14} alt="Four scatter panels of twelve toy points on two features, orange for broke and blue for held. In rounds 1 to 3 the dot size is the row weight going into the round and a dashed line marks the stump: round 1 cuts feature 1 at about 0.66 with weighted error 0.17 and alpha 0.80; round 2 cuts feature 1 at 0.25 with error 0.20 and alpha 0.69, with the two points missed in round 1 now much larger; round 3 cuts feature 2 at 0.62 with error 0.25 and alpha 0.55. The fourth panel shows the weighted vote with 92 percent of the twelve right and one point outlined in red as the miss.">
+Dot size is a person's row weight going into each round, and the dashed line is that round's stump. People a stump gets wrong weigh more in the next round, and the weighted vote of three weak stumps gets eleven of twelve right.
+</Figure>
+
+The **learning rate** shrinks every alpha, so each stump corrects less and more rounds are needed, which usually generalises better. The **number of rounds** controls how far the committee keeps correcting itself. Too few rounds underfit; with many rounds AdaBoost can start to chase noise in the heaviest examples. Both are chosen here by cross-validation.
+
+The row weights are also a record of what the committee finds hard. A person whose weight keeps growing round after round is a person that one stump after another fails to place. **This tab follows those weights to see which people the data cannot explain**, a question that boosting answers and a single tree does not.
+
+## Data
+
+The task is the one of the DecTrees tab, with the same people and the same label: did a person's routine break in the emergency? The label "broke" means the person's habit model, learned from their ordinary days, was far more surprised by their emergency fortnight than chance allows (19.1% of the 23,904 labelled people). The 34 features all come from days 0 to 44, so nothing from the emergency leaks into them: the fifteen traits of the Clustering tab, such as regularity and the share of records at home, three recording traits, habit surprise on days 30 to 44, the commute, the places around home and the daytime place, the kind of mover and the daily rhythm of the daytime place (Table 1).
+
+<Figure label="Table" n={1} title="Labelled people, as on the DecTrees tab" src={t14} alt="Table image with six training people and the columns uid, regularity, midday_away, home_share, rg_km, records_per_day, habit_surprise_30_44, kind, daytime_place and broke. For example person 12049 has regularity 0.958, is a local regular whose daytime place is busiest at noon, and did not break.">
+Six training people with some of their 34 features from days 0 to 44 and the label from the emergency fortnight.
+</Figure>
+
+Scikit-learn's AdaBoost, like its trees, takes numbers only. The kind of mover and the rhythm of the daytime place are categories, so they were **one-hot encoded**: each category becomes its own 0/1 column, which is 1 for the people in that category and 0 for everyone else (Table 2). Six kinds and six place rhythms give twelve such columns. A regular commuter whose daytime place is busiest at 17:00 has a 1 in "regular commuters" and in "peak 17:00", and 0 in the ten others. One-hot encoding avoids giving the categories an order they do not have, which numbering them 1 to 6 would do.
+
+<Figure label="Table" n={2} title="One-hot encoding of the two categories" src={t21} alt="Table image with six training people, their kind of mover and the rhythm of their daytime place as words, and five of the twelve 0/1 columns: regular commuters, homebodies, far roamers, place peak 12:00 and place peak 18:00. For example person 12049, a local regular whose daytime place peaks at 12:00, has 0 in the three kind columns shown and 1 in place peak 12:00; person 14050, a regular commuter with a place peaking at 17:00, has 1 in regular commuters and 0 elsewhere.">
+The kind of mover and the rhythm of the daytime place as words (left) and as the 0/1 columns the model reads; five of the twelve columns are shown.
+</Figure>
+
+The training and test sets are the same as on the DecTrees tab, split by person: 16,769 development people train and tune the committee, and 7,135 evaluation people are the test set (Table 3). The sets share nobody, so the test score shows how the committee does on people it has never seen. The settings were chosen inside the training people by 5-fold cross-validation, and the test people were used once, at the end.
+
+<Figure label="Table" n={3} title="Training and test sets" src={t22} alt="Table image with two rows. Training: 16,769 development people, 19.2 percent broke, used for fitting and choosing rounds and learning rate with 5-fold cross-validation. Test: 7,135 evaluation people, 18.9 percent broke, used for scoring the fixed model once.">
+The same people as the Part 3 trees, split by person, nobody in both.
+</Figure>
+
+Links: a sample of 500 labelled people with all 34 features, the label, the split and the kind of mover is [`data/samples/who_breaks_sample.csv`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/data/samples/who_breaks_sample.csv). The features are built from the cleaned record table in the release [Processed tables, Part 1](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/releases/tag/data-v1).
+
+## Code
+
+Python 3.11 with pandas, NumPy, scikit-learn 1.9 (AdaBoostClassifier with DecisionTreeClassifier stumps, StratifiedKFold) and Matplotlib, run on the Alpine cluster at the University of Colorado Boulder.
+
+- [`notebooks/09_a_committee_of_stumps.ipynb`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/notebooks/09_a_committee_of_stumps.ipynb): the one-hot step, the cross-validated choice of rounds and learning rate, the test comparison with the trees, the stumps and their votes, AdaBoost written from scratch to follow the row weights, and the committee given one day of the emergency, with Figures 3 to 7 and Tables 2 to 4.
+- [`code/overview_images_part4.py`](https://github.com/AntoniCzolgowski/agent-reliability-under-disruption/blob/module-4/code/overview_images_part4.py) draws Figures 1 and 2.
+
+## Results
+
+### Choosing the rounds and the learning rate
+
+Five learning rates, from 0.05 to 1, were each run for 1,500 rounds on every fold of 5-fold cross-validation, and every fold was scored after each round from the same fit (Figure 3). After one round, the committee is a single stump, "is regularity above 0.725?", with a validation AUC of 0.580. At a learning rate of 0.5, ten rounds already match the cross-validated AUC of the tuned tree of Part 3 (0.633). After that the gains slow down: at a learning rate of 0.5, AUC is 0.647 after 281 rounds and 0.650 after 1,500. Plain validation accuracy behaves differently. Because the weights start balanced, the committee flags many people who held, so its accuracy sits around 65%, below the 81% of always answering "held". That is why AUC chose the settings, as for the trees. Cross-validation chose **a learning rate of 0.5 and 1,500 rounds** (validation AUC 0.650, accuracy 64.8%, balanced accuracy 61.2%). The largest rate, 1, peaks lower, and the smallest ones are still climbing slowly at 1,500 rounds.
+
+<Figure n={3} title="Validation accuracy and AUC as rounds are added" src={f59} alt="Three panels with the number of rounds on a log scale from 1 to 1,500, one line per learning rate 0.05, 0.1, 0.25, 0.5 and 1. Left: validation accuracy between about 58 and 66 percent. Middle: validation balanced accuracy rising from about 57 to about 61 percent. Right: validation AUC rising from 0.58 after one round to about 0.64 to 0.65 after 1,500 rounds, highest for learning rate 0.5, with the chosen point marked at 1,500 rounds.">
+Cross-validated scores after every round for five learning rates, averaged over five folds of training people. The curves flatten after a few hundred rounds; the chosen setting is marked.
+</Figure>
+
+### The committee against the trees
+
+The chosen committee was fitted on all training people and scored once on the 7,135 test people, next to the three trees of the DecTrees tab and TabPFN-3.5, the pretrained model that was the strongest check in Part 3. The AUC differences come with 95% intervals from 1,000 bootstrap samples of test people, paired so that both models are scored on the same people each time.
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Model, test people</th><th>Accuracy</th><th>Balanced accuracy</th><th>AUC</th><th>AdaBoost minus this, AUC (95% interval)</th></tr></thead>
+<tbody>
+<tr><td>AdaBoost, 1,500 stumps</td><td>64.5%</td><td>60.1%</td><td>0.645</td><td></td></tr>
+<tr><td>Tree 1, depth 2</td><td>73.8%</td><td>57.2%</td><td>0.600</td><td>+0.046 (+0.036 to +0.056)</td></tr>
+<tr><td>Tree 2, tuned</td><td>58.3%</td><td>59.4%</td><td>0.629</td><td>+0.016 (+0.005 to +0.028)</td></tr>
+<tr><td>Tree 3, grown fully</td><td>70.8%</td><td>52.6%</td><td>0.526</td><td>+0.119 (+0.101 to +0.138)</td></tr>
+<tr><td>TabPFN-3.5 (Part 3 check)</td><td>63.9%</td><td>62.1%</td><td>0.665</td><td>−0.019 (−0.027 to −0.011)</td></tr>
+</tbody>
+</table>
+</div>
+
+**AdaBoost does better than every tree.** Against the tuned tree, the best of Part 3, its AUC is 0.016 higher, a small gain whose interval stays above zero. Its accuracy is 6.2 points higher (64.5% against 58.3%) and its balanced accuracy 0.8 points higher. The confusion matrices show how (Figure 4). The committee raises 552 fewer false alarms than the tuned tree (1,900 against 2,452) and finds 108 fewer people who broke (715 against 823). It is more careful, and it ranks people better overall. TabPFN-3.5, a large pretrained network, still does better by 0.019, so a committee of single questions closes nearly half of the gap between the readable tree and the pretrained model.
+
+<Figure n={4} title="Confusion matrices: AdaBoost and the tuned tree" src={f60} alt="Two confusion matrices of the 7,135 test people with the actual class in rows and the predicted class in columns. AdaBoost with stumps: accuracy 64.5 percent, balanced 60.1 percent, AUC 0.645; of people who held, 3,889 predicted held and 1,900 broke; of people who broke, 631 predicted held and 715 broke. Tree 2, tuned: accuracy 58.3 percent, balanced 59.4 percent, AUC 0.629; 3,337, 2,452, 523 and 823.">
+AdaBoost and the tuned tree on the same test people, with the count and the row share in each cell. AdaBoost leaves more people who held alone and finds slightly fewer people who broke.
+</Figure>
+
+### What the committee asks
+
+The first stumps rebuild the tree of the DecTrees tab (Table 4). The first asks whether regularity is above 0.725 and the second whether the commute is longer than 0.604 km, exactly the two cuts of the depth-2 tree, found again by a different method. The third asks about regularity again, at 0.611. Then come the share of records spent moving, longer commutes, the length of moves and the share of records at home.
+
+<Figure label="Table" n={4} title="The first eight stumps" src={t23} alt="Table image with eight rows and the columns round, feature, threshold, broke if, alpha and weighted error. Round 1 regularity 0.725 above, alpha 0.167, error 0.417. Round 2 commute_km 0.604 above, 0.119, 0.441. Round 3 regularity 0.611 above, 0.110, 0.445. Round 4 moving_share 0.752 at or below, 0.068, 0.466. Round 5 commute_km 1.059 above, 0.076, 0.462. Round 6 step_km 0.792 at or below, 0.052, 0.474. Round 7 home_share 0.060 above, 0.057, 0.471. Round 8 cells_per_day 10.606 at or below, 0.024, 0.488.">
+Each stump is one question about one feature, with the side that votes "broke", its alpha and its weighted error. The first two are the two questions of the Part 3 depth-2 tree.
+</Figure>
+
+Over all 1,500 rounds, though, the vote is shared differently from the tree's importance (Figure 5). Regularity, which does 32% of the tuned tree's splitting work, holds only 9% of the committee's total alpha. Most of it goes to fine distinctions in two recording traits, the number of different squares a person visits per day (21%) and records per day (21%). Only 20 of the 34 features are ever asked. Regularity gets the loudest single vote, but 13 stumps in all. Records per day describes how well a person is recorded, not how they live, and the label depends on how much of each fortnight was seen. **The long tail of the committee partly learns how visible people are**, which is a reason to read its later rounds with care.
+
+<Figure n={5} title="Which questions carry the vote" src={f61} alt="Two panels. Left: horizontal bars comparing AdaBoost's share of the vote, the sum of alpha, in orange with the tuned tree's importance in grey for the top features: cells_per_day 0.21 against 0.03, records_per_day 0.21 against 0.02, home_share 0.10 against 0.16, regularity 0.09 against 0.32, night_share 0.07 against 0.05, commute_km 0.07 against 0.14, extent_km 0.06 against 0, habit_surprise_30_44 0.05 against 0.05, moving_share 0.05 against 0.04, midday_away 0.02 against 0.03, entropy 0 against 0.05. Right: the alpha of each of the first 60 stumps, regularity in orange and commute in blue, falling from 0.17 in round 1 to below 0.05 after about round 10.">
+Left: each feature's share of the committee's total vote against its importance in the tuned tree. Right: the alpha of the first 60 stumps; the loud early votes go to regularity and the commute, and later votes are small corrections.
+</Figure>
+
+### Whom the committee could not learn
+
+To follow the row weights round by round, AdaBoost was written again from scratch in the notebook, the same algorithm in a few lines of NumPy. It reproduces scikit-learn exactly: the same test AUC, 0.6453, and a correlation of 1.000000 between the two sets of scores.
+
+At the start, the people who broke and are the most regular hold 15.5% of all the weight. After 1,500 rounds they hold 11.9%: the committee learned to place them, mostly with its first questions about regularity and the commute. The less regular people who broke go the other way, and their share of the weight grows (Figure 6, left). After the last round, **the heaviest tenth of the training people hold 31% of all the weight, and every one of them broke.** Among the people who broke in each fifth of regularity, the share that ends up in this heaviest tenth is:
+
+<div class="table-scroll">
+<table>
+<thead><tr><th>Regularity fifth</th><th>Least regular</th><th>2nd</th><th>3rd</th><th>4th</th><th>Most regular</th></tr></thead>
+<tbody>
+<tr><td>Broken routines in the heaviest tenth</td><td>88%</td><td>89%</td><td>85%</td><td>38%</td><td>9%</td></tr>
+</tbody>
+</table>
+</div>
+
+<Figure n={6} title="Who the committee could not learn" src={f62} alt="Two panels. Left: share of all row weight against the round on a log scale, one line per regularity fifth of the people who broke, from dark red for the least regular to light orange for the most regular. The most regular people who broke fall from 15.5 to 11.9 percent of the weight; the three least regular fifths rise from about 7.6 to 8.1 percent to about 9.1 to 9.5 percent. Right: bars of the share of each fifth's people who broke and held that end in the heaviest tenth after 1,500 rounds: broke 88, 89, 85, 38 and 9 percent from least to most regular; held 0 percent in every fifth.">
+Left: how the total row weight of each group of people who broke moves as rounds are added. Right: the share of each fifth's broken and held routines among the tenth of people who weigh most after the last round.
+</Figure>
+
+Nearly nine in ten of the broken routines in the three least regular fifths are among the people the committee never managed to place, against fewer than one in ten in the most regular fifth. By kind of mover, far roamers and mid-range movers make up 63% of this hard core, and regular commuters only 7%. **Boosting finds the same blind spot that the alarm on the [Research](../research/#invisible-breaks) tab found from the other side.** That alarm saw 60% of the breaks among the most regular people and 4% among the least regular. Here the committee, given 1,500 chances to correct itself, still cannot tell from ordinary weeks which irregular people will break. Their ordinary weeks already vary so much that nothing in them marks the coming change.
+
+### One day in
+
+Ordinary weeks cannot tell the irregular people apart, but the emergency can. The same committee, with the same settings, was trained again with three more inputs from day 60, the first day of the emergency: whether the person was seen, their share of the day away from home, and how far that share sat from their habit (the input of the Regression tab). Day 60 is one of the fifteen days the label is built on, so this does not foresee the future. It asks how much a single day of the new situation adds to deciding whose simulated stand-in to check first.
+
+It adds a lot. **AUC rises from 0.645 to 0.716**, a gain of 0.071 (95% interval 0.059 to 0.083), higher than any model of Part 3 reached from ordinary weeks. How far day 60 sat from the habit takes 43% of the whole vote. The gain is largest where ordinary weeks said least: within the least regular fifth, AUC rises from 0.589 to 0.678, and within the most regular fifth from 0.580 to 0.704 (Figure 7, left).
+
+<Figure n={7} title="One day in" src={f63} alt="Two panels. Left: test AUC within each regularity fifth for the committee on ordinary days only in grey, overall 0.645, and with the first emergency day in orange, overall 0.716: least regular 0.589 and 0.678, 2nd 0.588 and 0.661, 3rd 0.651 and 0.683, 4th 0.605 and 0.711, most regular 0.580 and 0.704, with a dashed line at 0.5. Right: the percentage of broken routines found by checking the 20 percent highest-risk test people: ordinary days 33 percent of all breaks and 2 percent in the least regular two fifths; one day in 43 percent and 17 percent.">
+Left: how well the committee ranks people within each fifth of regularity, from ordinary weeks alone and with the first emergency day added. Right: the share of broken routines found by checking the fifth of test people the committee ranks as most at risk.
+</Figure>
+
+For a decision, the ranking matters more than the score. Suppose a city, or a simulation, can check one person in five. Using ordinary weeks alone, the committee's top fifth contains 33% of all broken routines but only 2% of those in the two least regular fifths. After one day of the emergency, the same check finds 43% of all broken routines and **17% of those among the least regular people, seven times more.**
+
+## Conclusions
+
+A committee of single questions did what one tree could not. Each stump alone is barely better than a guess, yet 1,500 of them, each trained where the earlier ones went wrong, rank people better than the best tree of Part 3 (AUC 0.645 against 0.629). They do it with fewer false alarms and close nearly half of the gap to a large pretrained model. The committee's first questions are the tree's own, regularity above 0.725 and a commute beyond 0.6 km, found again by a different method. That makes these two signs the firmest result of the who-breaks question.
+
+The most useful thing the committee leaves behind is its row weights. They record whom the data could not explain. After 1,500 rounds the heaviest people are all people whose routine broke, almost all of them irregular: far roamers and mid-range movers whose ordinary weeks already varied. For the regular commuter, ordinary weeks hold a warning and boosting finds it. For the irregular person they hold none, however many questions are asked. This is the invisible break of the Research tab seen from inside a learning algorithm. Their routines broke as much as anyone's, but nothing in their past marks it.
+
+What finally separates them is the emergency itself. One day of it raises the committee's AUC to 0.716 and multiplies by seven the share of irregular people's broken routines found in a fixed budget of checks. The Regression tab reached the same conclusion from the other side: in an emergency, a new day is news. Together the two tabs say how a simulation should handle its stand-ins when a disruption begins. Before it, rank them by the warning signs of ordinary weeks. Once it starts, re-rank them after the first day, with the new day weighted as news rather than noise, because that is when the stand-ins of irregular people first become visible.
+
+For anyone building simulations of a city, this adds a working rule to those of the earlier tabs: treat the people a model keeps getting wrong as a result, not as noise. Boosting's row weights give that list for free. Here it named, ahead of time, exactly the group that a disruption alarm would later miss. A system that knows whose stand-ins it cannot predict from the past knows whom to observe first when the present changes.
