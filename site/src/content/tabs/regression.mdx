@@ -17,7 +17,7 @@ import f56 from "../../assets/figures/f56_logistic_tuning_and_nb.png";
 import f57 from "../../assets/figures/f57_logistic_confusion.png";
 import f58 from "../../assets/figures/f58_odds_clock.png";
 
-<p class="lede">When an emergency starts, a simulated person built from ordinary weeks faces a choice on every new day: is this day noise, or is it news? In ordinary weeks an unusual day is mostly noise, and an agent that believed it would get worse. Linear regression measures how much a new day should count, and the answer changes with the situation: one new day deserves four times more weight in the emergency than in ordinary weeks. Weighted that way, a week of fresh days brings the agent back to the accuracy it had before the emergency began. Logistic regression then returns to the question of the NaiveBayes tab, whether a single day comes from the emergency, and answers it better than any Naive Bayes model did.</p>
+<p class="lede">When an emergency starts, a simulated person built from ordinary weeks has to decide what each new day means: a one-off, or the first day of a new routine? In ordinary weeks an unusual day is usually a one-off, and an agent that took it seriously would get worse. Linear regression measures how much a new day should count, and the answer changes with the situation: in the emergency one new day deserves four times more weight than in ordinary weeks, as much as a whole ordinary week of new days. Weighted that way, a week of fresh days brings the agent back to the accuracy it had before the emergency began. Logistic regression then returns to the question of the NaiveBayes tab, whether a single day comes from the emergency, and answers it better than any Naive Bayes model did.</p>
 
 ## Overview
 
@@ -95,7 +95,7 @@ On average, the emergency hardly moved the share of the day people spent away fr
 
 ### The linear model
 
-Four sets of inputs were compared by 5-fold cross-validation on the training people, with a light Ridge penalty (a small cost on large weights) tried at five strengths. The error is the root mean squared error, **RMSE**, in percentage points of the share away from home: roughly, how far a typical prediction misses.
+Four sets of inputs were compared by 5-fold cross-validation on the training people, with a light Ridge penalty (a small cost on large weights) tried at five strengths. The error is the root mean squared error, **RMSE**, in percentage points of the share away from home: roughly, how far a typical prediction misses. A point is one percent of a person's day. On a 16-hour waking day that is about 10 minutes, so an error of 16 points means missing how long someone is away from home by about two and a half hours a day, and 10.6 points by about an hour and 40 minutes.
 
 <div class="table-scroll">
 <table>
@@ -130,14 +130,14 @@ Each hexagon counts test people with that prediction and that real share; on the
 
 Two weights in plain words, from the chosen model:
 
-- **Habit, 0.90.** A person who usually spends 10 more points of their days away from home is predicted to spend 9.0 more points of the second emergency week away, other inputs being equal. The old routine still carries most of the level.
-- **The first three days, 0.68.** If someone's first three emergency days sit 10 points further from home than their habit expected, the model predicts 6.8 more points away in the second week. About two thirds of an early change lasts.
+- **Habit, 0.90.** Take two people whose first emergency days went as their habits predicted. If one of them usually spends 10% more of the day away from home, about an hour and a half more of a 16-hour waking day, the model expects them to spend 9% more of the second emergency week away, about an hour and 25 minutes more per day. The old routine still sets most of the level.
+- **The first three days, 0.68.** If someone's first three emergency days kept them away from home for 10% more of the day than their habit expected, about an hour and a half extra, the model expects them to spend 6.8% more of the second week away, a little over an hour more per day. Two thirds of an early change carry into the following week.
 
-Two traits also matter a little: weekend movers spend 5.3 points less of the week away than their habit and first days suggest, and homebodies 3.7 points less.
+Two traits also matter a little: weekend movers spend 5.3% less of the week away than their habit and first days suggest, about 50 minutes a day, and homebodies 3.7% less, about 35 minutes.
 
-### Noise or news: how much a new day should count
+### A one-off or a new routine: how much a new day should count
 
-To see what an agent should do day by day, the model was refitted with only two inputs, the habit and the first k days, for each k and in both arms, with 95% intervals from 500 bootstrap samples of training people (Figure 4, right). In ordinary weeks, the first new day gets a weight of 0.11 (0.10 to 0.13). In the emergency it gets 0.46 (0.44 to 0.47). **In ordinary weeks an unusual day is mostly noise. In the emergency it is news, and four times as much of it is worth believing.**
+To see what an agent should do day by day, the model was refitted with only two inputs, the habit and the first k days, for each k and in both arms, with 95% intervals from 500 bootstrap samples of training people (Figure 4, right). In ordinary weeks, the first new day gets a weight of 0.11 (0.10 to 0.13). In the emergency it gets 0.46 (0.44 to 0.47). **In ordinary weeks an unusual day is usually a one-off. In the emergency it is usually the start of a new routine, and four times as much of it is worth believing: one emergency day counts as much as seven ordinary days (0.46 against 0.47).**
 
 The same weights can be read as a mix of the old and the new. After one new day, the best prediction in ordinary weeks is 0.86 × habit + 0.11 × the new day. In the emergency it is 0.48 × habit + 0.46 × the new day, an equal mix. After seven days in the emergency it is 0.17 × habit + 0.83 × the new days: the old routine has almost stopped counting.
 
@@ -149,7 +149,7 @@ The left of Figure 4 is a **repair curve**. It compares four agents on the test 
 
 - The **frozen habit** never looks at the new days. Its error stays at 16.0 points for the whole emergency.
 - **Fresh days only** forgets the habit and believes the new days alone. After one day it is worse than the habit (16.5 points), because one day is a noisy sample of a week. It catches up as days accumulate (8.9 points after seven).
-- **The mix tuned in ordinary weeks** carries over the weights of normal times. It improves slowly, to 12.8 points after three days and 10.6 after seven, because it keeps treating news as noise.
+- **The mix tuned in ordinary weeks** carries over the weights of normal times. It improves slowly, to 12.8 points after three days and 10.6 after seven, because it keeps treating the first days of a new routine as one-offs.
 - **The mix fitted in the emergency** uses the weights the emergency calls for. It is at 12.8 points after one day, 10.8 after three and 8.9 after seven, which is back at the 8.8 points of an ordinary week.
 
 So a week of the new situation, weighed correctly, gives an agent back its ordinary accuracy. Weighed with the habits of normal times, the same week gets it only halfway.
@@ -206,10 +206,14 @@ Left: how being at home or at the daytime place, rather than elsewhere, changes 
 
 The emergency did not move the average person: people spent almost the same share of their days away from home as before. It moved people in different directions, and that is what made their simulated stand-ins fail. A person's ordinary weeks explain 85% of how they spend the next ordinary week, but only 59% of how they spend a week of the emergency.
 
-The main finding is about how an agent should learn once something has changed. In ordinary weeks a strange day is mostly noise: the best weight for one new day is 0.11, and an agent that believed new days fully would get worse. In the emergency, a strange day is news: the best weight is 0.46, four times larger, and after a week the old habit is worth only 0.17. An agent weighted for the emergency gets back to its ordinary accuracy after about seven days. One that keeps the weights of normal times gets only halfway in the same week. **The right amount of trust in new evidence is not a fixed setting. It depends on the situation, so an agent first has to recognise that the situation has changed.**
+The main finding is about how an agent should learn once something has changed. In ordinary weeks an unusual day is usually a one-off: the best weight for one new day is 0.11, and an agent that believed new days fully would get worse. In the emergency an unusual day is usually the start of a new routine: the best weight is 0.46, four times larger and as large as the weight of a whole ordinary week, and after a week the old habit is worth only 0.17. An agent weighted for the emergency gets back to its ordinary accuracy after about seven days. One that keeps the weights of normal times gets only halfway in the same week. **The right amount of trust in new evidence is not a fixed setting. It depends on the situation, so an agent first has to recognise that the situation has changed.**
 
 That is where logistic regression comes in. Read half hour by half hour, the clock of a single day tells an emergency day from an ordinary one better than any Naive Bayes model (AUC 0.603 against at most 0.591), and adding how unusual each half hour was for the person raises it to 0.621. Still, a single day is a faint signal, made of many nudges of a few percent each. Recognising the emergency takes several days or many people at once, not one person's one day.
 
-For anyone building simulations of a city, this adds two working rules to those of the earlier tabs. First, do not freeze an agent's trust in new data at the level that worked in normal times. Keep two settings, one for ordinary weeks and one for a disruption, and switch between them when a detector, or the many agents at once, signal a change. Second, plan for about a week of fresh observations before stand-ins can be trusted again after a shock, and spend them first on the people whose errors grew most. Here those were the people whose routine broke, whose error nearly tripled.
+For anyone building simulations of a city, this adds two working rules to those of the earlier tabs.
+
+**Let an agent's trust in new data depend on the situation.** A weight tuned in normal weeks reads the first days of a disruption as one-offs. In this data it left the agent missing people's time away from home by about an hour and 40 minutes a day after a week, where the right weight brought it back to an hour and 25 minutes, the error of an ordinary week. Give every agent two settings, one for normal times and one for a disruption, and let a detector like the alarm of the NaiveBayes tab switch between them.
+
+**Get fresh data in the first days of a disruption and update the agents every day.** Those days are worth more than any other data a simulation will get: one emergency day counts as much as a whole ordinary week. When a disruption begins, the first job is to collect what people do now, from phone records, transit counts or a short check-in, and update the agents daily through the first week instead of waiting for things to settle. After about a week they are back to their normal accuracy.
 
 These results are also the first measured payoff for the update agent of the [Research](../research/) tab: an update after the first emergency days is worth far more than an update in ordinary weeks. Learning when to update starts from that difference.
